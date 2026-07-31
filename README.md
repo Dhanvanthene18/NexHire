@@ -1,37 +1,24 @@
-# `react`
+# PostCSS
 
-React is a JavaScript library for creating user interfaces.
+<img align="right" width="95" height="95"
+     alt="Philosopher’s stone, logo of PostCSS"
+     src="https://postcss.org/logo.svg">
 
-The `react` package contains only the functionality necessary to define React components. It is typically used together with a React renderer like `react-dom` for the web, or `react-native` for the native environments.
+PostCSS is a tool for transforming styles with JS plugins.
+These plugins can lint your CSS, support variables and mixins,
+transpile future CSS syntax, inline images, and more.
 
-**Note:** by default, React will be in development mode. The development version includes extra warnings about common mistakes, whereas the production version includes extra performance optimizations and strips all error messages. Don't forget to use the [production build](https://reactjs.org/docs/optimizing-performance.html#use-the-production-build) when deploying your application.
+PostCSS is used by industry leaders including Wikipedia, Twitter, Alibaba,
+and JetBrains. The [Autoprefixer] and [Stylelint] PostCSS plugins are some of the most popular CSS tools.
 
-## Usage
+---
 
-```js
-import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
+<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="" width="22" height="16" />  PostCSS is built by <b><a href="https://evilmartians.com/>Evil Martians</a></b>, an American design and engineering consultancy for <b>developer tools, AI, and cybersecurity startups</b>.
 
-function Counter() {
-  const [count, setCount] = useState(0);
-  return (
-    <>
-      <h1>{count}</h1>
-      <button onClick={() => setCount(count + 1)}>
-        Increment
-      </button>
-    </>
-  );
-}
+---
 
-const root = createRoot(document.getElementById('root'));
-root.render(<Counter />);
-```
-
-## Documentation
-
-See https://react.dev/
-
-## API
-
-See https://react.dev/reference/react
+[Abstract Syntax Tree]: https://en.wikipedia.org/wiki/Abstract_syntax_tree
+[Evil Martians]: https://evilmartians.com/?utm_source=postcss
+[Autoprefixer]: https://github.com/postcss/autoprefixer
+[Stylelint]: https://stylelint.io/
+[plugins]: https://github.com/postcss/postcss#plugins
