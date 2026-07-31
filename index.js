@@ -1,7 +1,16 @@
 'use strict';
 
-if (process.env.NODE_ENV === 'production') {
-  module.exports = require('./cjs/react.production.js');
-} else {
-  module.exports = require('./cjs/react.development.js');
-}
+const pathKey = (options = {}) => {
+	const environment = options.env || process.env;
+	const platform = options.platform || process.platform;
+
+	if (platform !== 'win32') {
+		return 'PATH';
+	}
+
+	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
+};
+
+module.exports = pathKey;
+// TODO: Remove this for the next major release
+module.exports.default = pathKey;
