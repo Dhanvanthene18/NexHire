@@ -1,30 +1,37 @@
-# Update Browserslist DB
+# `react`
 
-<img width="120" height="120" alt="Browserslist logo by Anton Popov"
-     src="https://browsersl.ist/logo.svg" align="right">
+React is a JavaScript library for creating user interfaces.
 
-CLI tool to update `caniuse-lite` with browsers DB
-from [Browserslist](https://github.com/browserslist/browserslist/) config.
+The `react` package contains only the functionality necessary to define React components. It is typically used together with a React renderer like `react-dom` for the web, or `react-native` for the native environments.
 
-Some queries like `last 2 versions` or `>1%` depend on actual data
-from `caniuse-lite`.
+**Note:** by default, React will be in development mode. The development version includes extra warnings about common mistakes, whereas the production version includes extra performance optimizations and strips all error messages. Don't forget to use the [production build](https://reactjs.org/docs/optimizing-performance.html#use-the-production-build) when deploying your application.
 
-```sh
-npx update-browserslist-db@latest
+## Usage
+
+```js
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <h1>{count}</h1>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </>
+  );
+}
+
+const root = createRoot(document.getElementById('root'));
+root.render(<Counter />);
 ```
-Or if using `pnpm`:
-```sh
-pnpm exec update-browserslist-db latest
-```
-Or if using `yarn`:
-```sh
-yarn dlx update-browserslist-db@latest
-```
 
-<a href="https://evilmartians.com/?utm_source=update-browserslist-db">
-  <img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg"
-       alt="Sponsored by Evil Martians" width="236" height="54">
-</a>
+## Documentation
 
-## Docs
-Read full docs **[here](https://github.com/browserslist/update-db#readme)**.
+See https://react.dev/
+
+## API
+
+See https://react.dev/reference/react
