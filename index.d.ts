@@ -1,15 +1,6 @@
-type Promisable<T> = T | Promise<T>;
+/**
+ * Run update and print output to terminal.
+ */
+declare function updateDb(print?: (str: string) => void): void
 
-declare namespace escalade {
-	export type Callback = (
-		directory: string,
-		files: string[],
-	) => Promisable<string | false | void>;
-}
-
-declare function escalade(
-	directory: string,
-	callback: escalade.Callback,
-): Promise<string | void>;
-
-export = escalade;
+export = updateDb

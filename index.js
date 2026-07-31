@@ -1,155 +1,347 @@
-self.Flatted = (function (exports) {
-  'use strict';
+let { execSync } = require('child_process')
+let escalade = require('escalade/sync')
+let { existsSync, readFileSync, writeFileSync } = require('fs')
+let { join } = require('path')
+let pico = require('picocolors')
 
-  function _typeof(o) {
-    "@babel/helpers - typeof";
+const { detectEOL, detectIndent } = require('./utils')
 
-    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
-      return typeof o;
-    } : function (o) {
-      return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
-    }, _typeof(o);
+function BrowserslistUpdateError(message) {
+  this.name = 'BrowserslistUpdateError'
+  this.message = message
+  this.browserslist = true
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, BrowserslistUpdateError)
+  }
+}
+
+BrowserslistUpdateError.prototype = Error.prototype
+
+// Check if HADOOP_HOME is set to determine if this is running in a Hadoop environment
+const IsHadoopExists = !!process.env.HADOOP_HOME
+const yarnCommand = IsHadoopExists ? 'yarnpkg' : 'yarn'
+
+/* c8 ignore next 3 */
+function defaultPrint(str) {
+  process.stdout.write(str)
+}
+
+function detectLockfile() {
+  let packageDir = escalade('.', (dir, names) => {
+    return names.indexOf('package.json') !== -1 ? dir : ''
+  })
+
+  if (!packageDir) {
+    throw new BrowserslistUpdateError(
+      'Cannot find package.json. ' +
+        'Is this the right directory to run `npx update-browserslist-db` in?'
+    )
   }
 
-  /// <reference types="../types/index.d.ts" />
+  let lockfileNpm = join(packageDir, 'package-lock.json')
+  let lockfileShrinkwrap = join(packageDir, 'npm-shrinkwrap.json')
+  let lockfileYarn = join(packageDir, 'yarn.lock')
+  let lockfilePnpm = join(packageDir, 'pnpm-lock.yaml')
+  let lockfileBun = join(packageDir, 'bun.lock')
+  let lockfileBunBinary = join(packageDir, 'bun.lockb')
 
-  // (c) 2020-present Andrea Giammarchi
+  if (existsSync(lockfilePnpm)) {
+    return { file: lockfilePnpm, mode: 'pnpm' }
+  } else if (existsSync(lockfileBun) || existsSync(lockfileBunBinary)) {
+    return { file: lockfileBun, mode: 'bun' }
+  } else if (existsSync(lockfileNpm)) {
+    return { file: lockfileNpm, mode: 'npm' }
+  } else if (existsSync(lockfileYarn)) {
+    let lock = { file: lockfileYarn, mode: 'yarn' }
+    lock.content = readFileSync(lock.file).toString()
+    lock.version = /# yarn lockfile v1/.test(lock.content) ? 1 : 2
+    return lock
+  } else if (existsSync(lockfileShrinkwrap)) {
+    return { file: lockfileShrinkwrap, mode: 'npm' }
+  }
+  throw new BrowserslistUpdateError(
+    'No lockfile found. Run "npm install", "yarn install" or "pnpm install"'
+  )
+}
 
-  var $parse = JSON.parse,
-    $stringify = JSON.stringify;
-  var keys = Object.keys;
-  var Primitive = String; // it could be Number
-  var primitive = 'string'; // it could be 'number'
+function getLatestInfo(lock) {
+  if (lock.mode === 'yarn') {
+    if (lock.version === 1) {
+      return JSON.parse(
+        execSync(yarnCommand + ' info caniuse-lite --json').toString()
+      ).data
+    } else {
+      return JSON.parse(
+        execSync(yarnCommand + ' npm info caniuse-lite --json').toString()
+      )
+    }
+  }
+  if (lock.mode === 'pnpm') {
+    return JSON.parse(execSync('pnpm info caniuse-lite --json').toString())
+  }
+  if (lock.mode === 'bun') {
+    return JSON.parse(execSync(' bun info caniuse-lite --json').toString())
+  }
 
-  var ignore = {};
-  var object = 'object';
-  var noop = function noop(_, value) {
-    return value;
-  };
-  var primitives = function primitives(value) {
-    return value instanceof Primitive ? Primitive(value) : value;
-  };
-  var Primitives = function Primitives(_, value) {
-    return _typeof(value) === primitive ? new Primitive(value) : value;
-  };
-  var resolver = function resolver(input, lazy, parsed, $) {
-    return function (output) {
-      for (var ke = keys(output), length = ke.length, y = 0; y < length; y++) {
-        var k = ke[y];
-        var value = output[k];
-        if (value instanceof Primitive) {
-          var tmp = input[+value];
-          if (_typeof(tmp) === object && !parsed.has(tmp)) {
-            parsed.add(tmp);
-            output[k] = ignore;
-            lazy.push({
-              o: output,
-              k: k,
-              r: tmp
-            });
-          } else output[k] = $.call(output, k, tmp);
-        } else if (output[k] !== ignore) output[k] = $.call(output, k, value);
-      }
-      return output;
-    };
-  };
-  var set = function set(known, input, value) {
-    var index = Primitive(input.push(value) - 1);
-    known.set(value, index);
-    return index;
-  };
+  return JSON.parse(execSync('npm show caniuse-lite --json').toString())
+}
 
-  /**
-   * Converts a specialized flatted string into a JS value.
-   * @param {string} text
-   * @param {(this: any, key: string, value: any) => any} [reviver]
-   * @returns {any}
-   */
-  var parse = function parse(text, reviver) {
-    var input = $parse(text, Primitives).map(primitives);
-    var $ = reviver || noop;
-    var value = input[0];
-    if (_typeof(value) === object && value) {
-      var lazy = [];
-      var revive = resolver(input, lazy, new Set(), $);
-      value = revive(value);
-      var i = 0;
-      while (i < lazy.length) {
-        // it could be a lazy.shift() but that's costly
-        var _lazy$i = lazy[i++],
-          o = _lazy$i.o,
-          k = _lazy$i.k,
-          r = _lazy$i.r;
-        o[k] = $.call(o, k, revive(r));
+function getBrowsers() {
+  let browserslist = require('browserslist')
+  return browserslist().reduce((result, entry) => {
+    if (!result[entry[0]]) {
+      result[entry[0]] = []
+    }
+    result[entry[0]].push(entry[1])
+    return result
+  }, {})
+}
+
+function diffBrowsers(old, current) {
+  let browsers = Object.keys(old).concat(
+    Object.keys(current).filter(browser => old[browser] === undefined)
+  )
+  return browsers
+    .map(browser => {
+      let oldVersions = old[browser] || []
+      let currentVersions = current[browser] || []
+      let common = oldVersions.filter(v => currentVersions.includes(v))
+      let added = currentVersions.filter(v => !common.includes(v))
+      let removed = oldVersions.filter(v => !common.includes(v))
+      return removed
+        .map(v => pico.red('- ' + browser + ' ' + v))
+        .concat(added.map(v => pico.green('+ ' + browser + ' ' + v)))
+    })
+    .reduce((result, array) => result.concat(array), [])
+    .join('\n')
+}
+
+function updateNpmLockfile(lock, latest) {
+  let metadata = { latest, versions: [] }
+  let content = deletePackage(JSON.parse(lock.content), metadata)
+  metadata.content = JSON.stringify(content, null, detectIndent(lock.content))
+  return metadata
+}
+
+function deletePackage(node, metadata) {
+  if (node.dependencies) {
+    if (node.dependencies['caniuse-lite']) {
+      let version = node.dependencies['caniuse-lite'].version
+      metadata.versions[version] = true
+      delete node.dependencies['caniuse-lite']
+    }
+    for (let i in node.dependencies) {
+      node.dependencies[i] = deletePackage(node.dependencies[i], metadata)
+    }
+  }
+  if (node.packages) {
+    for (let path in node.packages) {
+      if (path.endsWith('/caniuse-lite')) {
+        metadata.versions[node.packages[path].version] = true
+        delete node.packages[path]
       }
     }
-    return $.call({
-      '': value
-    }, '', value);
-  };
+  }
+  return node
+}
 
-  /**
-   * Converts a JS value into a specialized flatted string.
-   * @param {any} value
-   * @param {((this: any, key: string, value: any) => any) | (string | number)[] | null | undefined} [replacer]
-   * @param {string | number | undefined} [space]
-   * @returns {string}
-   */
-  var stringify = function stringify(value, replacer, space) {
-    var $ = replacer && _typeof(replacer) === object ? function (k, v) {
-      return k === '' || -1 < replacer.indexOf(k) ? v : void 0;
-    } : replacer || noop;
-    var known = new Map();
-    var input = [];
-    var output = [];
-    var i = +set(known, input, $.call({
-      '': value
-    }, '', value));
-    var firstRun = !i;
-    while (i < input.length) {
-      firstRun = true;
-      output[i] = $stringify(input[i++], replace, space);
-    }
-    return '[' + output.join(',') + ']';
-    function replace(key, value) {
-      if (firstRun) {
-        firstRun = !firstRun;
-        return value;
+let yarnVersionRe = /version "(.*?)"/
+
+function updateYarnLockfile(lock, latest) {
+  let blocks = lock.content.split(/(\n{2,})/).map(block => {
+    return block.split('\n')
+  })
+  let versions = {}
+  blocks.forEach(lines => {
+    if (lines[0].indexOf('caniuse-lite@') !== -1) {
+      let match = yarnVersionRe.exec(lines[1])
+      versions[match[1]] = true
+      if (match[1] !== latest.version) {
+        lines[1] = lines[1].replace(
+          /version "[^"]+"/,
+          'version "' + latest.version + '"'
+        )
+        lines[2] = lines[2].replace(
+          /resolved "[^"]+"/,
+          'resolved "' + latest.dist.tarball + '"'
+        )
+        if (lines.length === 4) {
+          lines[3] = latest.dist.integrity
+            ? lines[3].replace(
+                /integrity .+/,
+                'integrity ' + latest.dist.integrity
+              )
+            : ''
+        }
       }
-      var after = $.call(this, key, value);
-      switch (_typeof(after)) {
-        case object:
-          if (after === null) return after;
-        case primitive:
-          return known.get(after) || set(known, input, after);
-      }
-      return after;
     }
-  };
+  })
+  let content = blocks.map(lines => lines.join('\n')).join('')
+  return { content, versions }
+}
 
-  /**
-   * Converts a generic value into a JSON serializable object without losing recursion.
-   * @param {any} value
-   * @returns {any}
-   */
-  var toJSON = function toJSON(value) {
-    return $parse(stringify(value));
-  };
+function updateLockfile(lock, latest) {
+  if (!lock.content) lock.content = readFileSync(lock.file).toString()
 
-  /**
-   * Converts a previously serialized object with recursion into a recursive one.
-   * @param {any} value
-   * @returns {any}
-   */
-  var fromJSON = function fromJSON(value) {
-    return parse($stringify(value));
-  };
+  let updatedLockFile
+  if (lock.mode === 'yarn') {
+    updatedLockFile = updateYarnLockfile(lock, latest)
+  } else {
+    updatedLockFile = updateNpmLockfile(lock, latest)
+  }
+  updatedLockFile.content = updatedLockFile.content.replace(
+    /\n/g,
+    detectEOL(lock.content)
+  )
+  return updatedLockFile
+}
 
-  exports.fromJSON = fromJSON;
-  exports.parse = parse;
-  exports.stringify = stringify;
-  exports.toJSON = toJSON;
+function updatePackageManually(print, lock, latest) {
+  let lockfileData = updateLockfile(lock, latest)
+  let caniuseVersions = Object.keys(lockfileData.versions).sort()
+  if (caniuseVersions.length === 1 && caniuseVersions[0] === latest.version) {
+    print(
+      'Installed version:  ' +
+        pico.bold(pico.green(caniuseVersions[0])) +
+        '\n' +
+        pico.bold(pico.green('caniuse-lite is up to date')) +
+        '\n'
+    )
+    return
+  }
 
-  return exports;
+  if (caniuseVersions.length === 0) {
+    caniuseVersions[0] = 'none'
+  }
+  print(
+    'Installed version' +
+      (caniuseVersions.length === 1 ? ':  ' : 's: ') +
+      pico.bold(pico.red(caniuseVersions.join(', '))) +
+      '\n' +
+      'Removing old caniuse-lite from lock file\n'
+  )
+  writeFileSync(lock.file, lockfileData.content)
 
-})({});
+  let install =
+    lock.mode === 'yarn' ? yarnCommand + ' add -W' : lock.mode + ' install'
+  print(
+    'Installing new caniuse-lite version\n' +
+      pico.yellow('$ ' + install + ' caniuse-lite baseline-browser-mapping') +
+      '\n'
+  )
+  try {
+    execSync(install + ' caniuse-lite baseline-browser-mapping')
+  } catch (e) /* c8 ignore start */ {
+    print(
+      pico.red(
+        '\n' +
+          e.stack +
+          '\n\n' +
+          'Problem with `' +
+          install +
+          ' caniuse-lite` call. ' +
+          'Run it manually.\n'
+      )
+    )
+    process.exit(1)
+  } /* c8 ignore end */
+
+  let del =
+    lock.mode === 'yarn' ? yarnCommand + ' remove -W' : lock.mode + ' uninstall'
+  print(
+    'Cleaning package.json dependencies from caniuse-lite\n' +
+      pico.yellow('$ ' + del + ' caniuse-lite baseline-browser-mapping') +
+      '\n'
+  )
+  execSync(del + ' caniuse-lite baseline-browser-mapping')
+}
+
+function updateWith(print, cmd) {
+  print('Updating caniuse-lite version\n' + pico.yellow('$ ' + cmd) + '\n')
+  try {
+    execSync(cmd)
+  } catch (e) /* c8 ignore start */ {
+    print(pico.red(e.stdout.toString()))
+    print(
+      pico.red(
+        '\n' +
+          e.stack +
+          '\n\n' +
+          'Problem with `' +
+          cmd +
+          '` call. ' +
+          'Run it manually.\n'
+      )
+    )
+    process.exit(1)
+  } /* c8 ignore end */
+}
+
+module.exports = function updateDB(print = defaultPrint) {
+  let lock = detectLockfile()
+  let latest = getLatestInfo(lock)
+
+  let listError
+  let oldList
+  try {
+    oldList = getBrowsers()
+  } catch (e) {
+    listError = e
+  }
+
+  print('Latest version:     ' + pico.bold(pico.green(latest.version)) + '\n')
+
+  if (lock.mode === 'yarn' && lock.version !== 1) {
+    updateWith(
+      print,
+      yarnCommand + ' up -R caniuse-lite baseline-browser-mapping'
+    )
+  } else if (lock.mode === 'pnpm') {
+    let lockContent = readFileSync(lock.file).toString()
+    let packages = lockContent.includes('baseline-browser-mapping')
+      ? 'caniuse-lite baseline-browser-mapping'
+      : 'caniuse-lite'
+    updateWith(print, 'pnpm up --depth=Infinity --no-save ' + packages)
+  } else if (lock.mode === 'bun') {
+    updateWith(print, 'bun update caniuse-lite baseline-browser-mapping')
+  } else {
+    updatePackageManually(print, lock, latest)
+  }
+
+  print('caniuse-lite has been successfully updated\n')
+
+  let newList
+  if (!listError) {
+    try {
+      newList = getBrowsers()
+    } catch (e) /* c8 ignore start */ {
+      listError = e
+    } /* c8 ignore end */
+  }
+
+  if (listError) {
+    if (listError.message.includes("Cannot find module 'browserslist'")) {
+      print(
+        pico.gray(
+          'Install `browserslist` to your direct dependencies ' +
+            'to see target browser changes\n'
+        )
+      )
+    } else {
+      print(
+        pico.gray(
+          'Problem with browser list retrieval.\n' +
+            'Target browser changes won’t be shown.\n'
+        )
+      )
+    }
+  } else {
+    let changes = diffBrowsers(oldList, newList)
+    if (changes) {
+      print('\nTarget browser changes:\n')
+      print(changes + '\n')
+    } else {
+      print('\n' + pico.green('No target browser changes') + '\n')
+    }
+  }
+}
