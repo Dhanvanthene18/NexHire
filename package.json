@@ -1,43 +1,39 @@
 {
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
-  "name": "which",
-  "description": "Like which(1) unix command. Find the first instance of an executable in the PATH.",
-  "version": "2.0.2",
+  "name": "type-check",
+  "version": "0.4.0",
+  "author": "George Zahariev <z@georgezahariev.com>",
+  "description": "type-check allows you to check the types of JavaScript values at runtime with a Haskell like type syntax.",
+  "homepage": "https://github.com/gkz/type-check",
+  "keywords": [
+    "type",
+    "check",
+    "checking",
+    "library"
+  ],
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./lib/",
+  "bugs": "https://github.com/gkz/type-check/issues",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
   "repository": {
     "type": "git",
-    "url": "git://github.com/isaacs/node-which.git"
-  },
-  "main": "which.js",
-  "bin": {
-    "node-which": "./bin/node-which"
-  },
-  "license": "ISC",
-  "dependencies": {
-    "isexe": "^2.0.0"
-  },
-  "devDependencies": {
-    "mkdirp": "^0.5.0",
-    "rimraf": "^2.6.2",
-    "tap": "^14.6.9"
+    "url": "git://github.com/gkz/type-check.git"
   },
   "scripts": {
-    "test": "tap",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "prepublish": "npm run changelog",
-    "prechangelog": "bash gen-changelog.sh",
-    "changelog": "git add CHANGELOG.md",
-    "postchangelog": "git commit -m 'update changelog - '${npm_package_version}",
-    "postpublish": "git push origin --follow-tags"
+    "test": "make test"
   },
-  "files": [
-    "which.js",
-    "bin/node-which"
-  ],
-  "tap": {
-    "check-coverage": true
+  "dependencies": {
+    "prelude-ls": "^1.2.1"
   },
-  "engines": {
-    "node": ">= 8"
+  "devDependencies": {
+    "livescript": "^1.6.0",
+    "mocha": "^7.1.1",
+    "browserify": "^16.5.1"
   }
 }
