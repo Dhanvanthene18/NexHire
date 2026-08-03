@@ -1,177 +1,153 @@
-# @eslint-community/regexpp
+### Estraverse [![Build Status](https://secure.travis-ci.org/estools/estraverse.svg)](http://travis-ci.org/estools/estraverse)
 
-[![npm version](https://img.shields.io/npm/v/@eslint-community/regexpp.svg)](https://www.npmjs.com/package/@eslint-community/regexpp)
-[![Downloads/month](https://img.shields.io/npm/dm/@eslint-community/regexpp.svg)](http://www.npmtrends.com/@eslint-community/regexpp)
-[![Build Status](https://github.com/eslint-community/regexpp/workflows/CI/badge.svg)](https://github.com/eslint-community/regexpp/actions)
-[![codecov](https://codecov.io/gh/eslint-community/regexpp/branch/main/graph/badge.svg)](https://codecov.io/gh/eslint-community/regexpp)
+Estraverse ([estraverse](http://github.com/estools/estraverse)) is
+[ECMAScript](http://www.ecma-international.org/publications/standards/Ecma-262.htm)
+traversal functions from [esmangle project](http://github.com/estools/esmangle).
 
-A regular expression parser for ECMAScript.
+### Documentation
 
-## 💿 Installation
+You can find usage docs at [wiki page](https://github.com/estools/estraverse/wiki/Usage).
 
-```bash
-$ npm install @eslint-community/regexpp
+### Example Usage
+
+The following code will output all variables declared at the root of a file.
+
+```javascript
+estraverse.traverse(ast, {
+    enter: function (node, parent) {
+        if (node.type == 'FunctionExpression' || node.type == 'FunctionDeclaration')
+            return estraverse.VisitorOption.Skip;
+    },
+    leave: function (node, parent) {
+        if (node.type == 'VariableDeclarator')
+          console.log(node.id.name);
+    }
+});
 ```
 
-- require Node@^12.0.0 || ^14.0.0 || >=16.0.0.
+We can use `this.skip`, `this.remove` and `this.break` functions instead of using Skip, Remove and Break.
 
-## 📖 Usage
-
-```ts
-import {
-    AST,
-    RegExpParser,
-    RegExpValidator,
-    RegExpVisitor,
-    parseRegExpLiteral,
-    validateRegExpLiteral,
-    visitRegExpAST
-} from "@eslint-community/regexpp"
+```javascript
+estraverse.traverse(ast, {
+    enter: function (node) {
+        this.break();
+    }
+});
 ```
 
-### parseRegExpLiteral(source, options?)
+And estraverse provides `estraverse.replace` function. When returning node from `enter`/`leave`, current node is replaced with it.
 
-Parse a given regular expression literal then make AST object.
+```javascript
+result = estraverse.replace(tree, {
+    enter: function (node) {
+        // Replace it with replaced.
+        if (node.type === 'Literal')
+            return replaced;
+    }
+});
+```
 
-This is equivalent to `new RegExpParser(options).parseLiteral(source)`.
+By passing `visitor.keys` mapping, we can extend estraverse traversing functionality.
 
-- **Parameters:**
-    - `source` (`string | RegExp`) The source code to parse.
-    - `options?` ([`RegExpParser.Options`]) The options to parse.
-- **Return:**
-    - The AST of the regular expression.
+```javascript
+// This tree contains a user-defined `TestExpression` node.
+var tree = {
+    type: 'TestExpression',
 
-### validateRegExpLiteral(source, options?)
+    // This 'argument' is the property containing the other **node**.
+    argument: {
+        type: 'Literal',
+        value: 20
+    },
 
-Validate a given regular expression literal.
+    // This 'extended' is the property not containing the other **node**.
+    extended: true
+};
+estraverse.traverse(tree, {
+    enter: function (node) { },
 
-This is equivalent to `new RegExpValidator(options).validateLiteral(source)`.
+    // Extending the existing traversing rules.
+    keys: {
+        // TargetNodeName: [ 'keys', 'containing', 'the', 'other', '**node**' ]
+        TestExpression: ['argument']
+    }
+});
+```
 
-- **Parameters:**
-    - `source` (`string`) The source code to validate.
-    - `options?` ([`RegExpValidator.Options`]) The options to validate.
+By passing `visitor.fallback` option, we can control the behavior when encountering unknown nodes.
 
-### visitRegExpAST(ast, handlers)
+```javascript
+// This tree contains a user-defined `TestExpression` node.
+var tree = {
+    type: 'TestExpression',
 
-Visit each node of a given AST.
+    // This 'argument' is the property containing the other **node**.
+    argument: {
+        type: 'Literal',
+        value: 20
+    },
 
-This is equivalent to `new RegExpVisitor(handlers).visit(ast)`.
+    // This 'extended' is the property not containing the other **node**.
+    extended: true
+};
+estraverse.traverse(tree, {
+    enter: function (node) { },
 
-- **Parameters:**
-    - `ast` ([`AST.Node`]) The AST to visit.
-    - `handlers` ([`RegExpVisitor.Handlers`]) The callbacks.
+    // Iterating the child **nodes** of unknown nodes.
+    fallback: 'iteration'
+});
+```
 
-### RegExpParser
+When `visitor.fallback` is a function, we can determine which keys to visit on each node.
 
-#### new RegExpParser(options?)
+```javascript
+// This tree contains a user-defined `TestExpression` node.
+var tree = {
+    type: 'TestExpression',
 
-- **Parameters:**
-    - `options?` ([`RegExpParser.Options`]) The options to parse.
+    // This 'argument' is the property containing the other **node**.
+    argument: {
+        type: 'Literal',
+        value: 20
+    },
 
-#### parser.parseLiteral(source, start?, end?)
+    // This 'extended' is the property not containing the other **node**.
+    extended: true
+};
+estraverse.traverse(tree, {
+    enter: function (node) { },
 
-Parse a regular expression literal.
+    // Skip the `argument` property of each node
+    fallback: function(node) {
+        return Object.keys(node).filter(function(key) {
+            return key !== 'argument';
+        });
+    }
+});
+```
 
-- **Parameters:**
-    - `source` (`string`) The source code to parse. E.g. `"/abc/g"`.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-- **Return:**
-    - The AST of the regular expression.
+### License
 
-#### parser.parsePattern(source, start?, end?, flags?)
+Copyright (C) 2012-2016 [Yusuke Suzuki](http://github.com/Constellation)
+ (twitter: [@Constellation](http://twitter.com/Constellation)) and other contributors.
 
-Parse a regular expression pattern.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-- **Parameters:**
-    - `source` (`string`) The source code to parse. E.g. `"abc"`.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-    - `flags?` (`{ unicode?: boolean, unicodeSets?: boolean }`) The flags to enable Unicode mode, and Unicode Set mode.
-- **Return:**
-    - The AST of the regular expression pattern.
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
 
-#### parser.parseFlags(source, start?, end?)
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
 
-Parse a regular expression flags.
-
-- **Parameters:**
-    - `source` (`string`) The source code to parse. E.g. `"gim"`.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-- **Return:**
-    - The AST of the regular expression flags.
-
-### RegExpValidator
-
-#### new RegExpValidator(options)
-
-- **Parameters:**
-    - `options` ([`RegExpValidator.Options`]) The options to validate.
-
-#### validator.validateLiteral(source, start, end)
-
-Validate a regular expression literal.
-
-- **Parameters:**
-    - `source` (`string`) The source code to validate.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-
-#### validator.validatePattern(source, start, end, flags)
-
-Validate a regular expression pattern.
-
-- **Parameters:**
-    - `source` (`string`) The source code to validate.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-    - `flags?` (`{ unicode?: boolean, unicodeSets?: boolean }`) The flags to enable Unicode mode, and Unicode Set mode.
-
-#### validator.validateFlags(source, start, end)
-
-Validate a regular expression flags.
-
-- **Parameters:**
-    - `source` (`string`) The source code to validate.
-    - `start?` (`number`) The start index in the source code. Default is `0`.
-    - `end?` (`number`) The end index in the source code. Default is `source.length`.
-
-### RegExpVisitor
-
-#### new RegExpVisitor(handlers)
-
-- **Parameters:**
-    - `handlers` ([`RegExpVisitor.Handlers`]) The callbacks.
-
-#### visitor.visit(ast)
-
-Validate a regular expression literal.
-
-- **Parameters:**
-    - `ast` ([`AST.Node`]) The AST to visit.
-
-## 📰 Changelog
-
-- [GitHub Releases](https://github.com/eslint-community/regexpp/releases)
-
-## 🍻 Contributing
-
-Welcome contributing!
-
-Please use GitHub's Issues/PRs.
-
-### Development Tools
-
-- `npm test` runs tests and measures coverage.
-- `npm run build` compiles TypeScript source code to `index.js`, `index.js.map`, and `index.d.ts`.
-- `npm run clean` removes the temporary files which are created by `npm test` and `npm run build`.
-- `npm run lint` runs ESLint.
-- `npm run update:test` updates test fixtures.
-- `npm run update:ids` updates `src/unicode/ids.ts`.
-- `npm run watch` runs tests with `--watch` option.
-
-[`AST.Node`]: src/ast.ts#L4
-[`RegExpParser.Options`]: src/parser.ts#L743
-[`RegExpValidator.Options`]: src/validator.ts#L220
-[`RegExpVisitor.Handlers`]: src/visitor.ts#L291
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
