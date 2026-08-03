@@ -1,153 +1,54 @@
-### Estraverse [![Build Status](https://secure.travis-ci.org/estools/estraverse.svg)](http://travis-ci.org/estools/estraverse)
+# which
 
-Estraverse ([estraverse](http://github.com/estools/estraverse)) is
-[ECMAScript](http://www.ecma-international.org/publications/standards/Ecma-262.htm)
-traversal functions from [esmangle project](http://github.com/estools/esmangle).
+Like the unix `which` utility.
 
-### Documentation
+Finds the first instance of a specified executable in the PATH
+environment variable.  Does not cache the results, so `hash -r` is not
+needed when the PATH changes.
 
-You can find usage docs at [wiki page](https://github.com/estools/estraverse/wiki/Usage).
-
-### Example Usage
-
-The following code will output all variables declared at the root of a file.
+## USAGE
 
 ```javascript
-estraverse.traverse(ast, {
-    enter: function (node, parent) {
-        if (node.type == 'FunctionExpression' || node.type == 'FunctionDeclaration')
-            return estraverse.VisitorOption.Skip;
-    },
-    leave: function (node, parent) {
-        if (node.type == 'VariableDeclarator')
-          console.log(node.id.name);
-    }
-});
+var which = require('which')
+
+// async usage
+which('node', function (er, resolvedPath) {
+  // er is returned if no "node" is found on the PATH
+  // if it is found, then the absolute path to the exec is returned
+})
+
+// or promise
+which('node').then(resolvedPath => { ... }).catch(er => { ... not found ... })
+
+// sync usage
+// throws if not found
+var resolved = which.sync('node')
+
+// if nothrow option is used, returns null if not found
+resolved = which.sync('node', {nothrow: true})
+
+// Pass options to override the PATH and PATHEXT environment vars.
+which('node', { path: someOtherPath }, function (er, resolved) {
+  if (er)
+    throw er
+  console.log('found at %j', resolved)
+})
 ```
 
-We can use `this.skip`, `this.remove` and `this.break` functions instead of using Skip, Remove and Break.
+## CLI USAGE
 
-```javascript
-estraverse.traverse(ast, {
-    enter: function (node) {
-        this.break();
-    }
-});
+Same as the BSD `which(1)` binary.
+
+```
+usage: which [-as] program ...
 ```
 
-And estraverse provides `estraverse.replace` function. When returning node from `enter`/`leave`, current node is replaced with it.
+## OPTIONS
 
-```javascript
-result = estraverse.replace(tree, {
-    enter: function (node) {
-        // Replace it with replaced.
-        if (node.type === 'Literal')
-            return replaced;
-    }
-});
-```
+You may pass an options object as the second argument.
 
-By passing `visitor.keys` mapping, we can extend estraverse traversing functionality.
-
-```javascript
-// This tree contains a user-defined `TestExpression` node.
-var tree = {
-    type: 'TestExpression',
-
-    // This 'argument' is the property containing the other **node**.
-    argument: {
-        type: 'Literal',
-        value: 20
-    },
-
-    // This 'extended' is the property not containing the other **node**.
-    extended: true
-};
-estraverse.traverse(tree, {
-    enter: function (node) { },
-
-    // Extending the existing traversing rules.
-    keys: {
-        // TargetNodeName: [ 'keys', 'containing', 'the', 'other', '**node**' ]
-        TestExpression: ['argument']
-    }
-});
-```
-
-By passing `visitor.fallback` option, we can control the behavior when encountering unknown nodes.
-
-```javascript
-// This tree contains a user-defined `TestExpression` node.
-var tree = {
-    type: 'TestExpression',
-
-    // This 'argument' is the property containing the other **node**.
-    argument: {
-        type: 'Literal',
-        value: 20
-    },
-
-    // This 'extended' is the property not containing the other **node**.
-    extended: true
-};
-estraverse.traverse(tree, {
-    enter: function (node) { },
-
-    // Iterating the child **nodes** of unknown nodes.
-    fallback: 'iteration'
-});
-```
-
-When `visitor.fallback` is a function, we can determine which keys to visit on each node.
-
-```javascript
-// This tree contains a user-defined `TestExpression` node.
-var tree = {
-    type: 'TestExpression',
-
-    // This 'argument' is the property containing the other **node**.
-    argument: {
-        type: 'Literal',
-        value: 20
-    },
-
-    // This 'extended' is the property not containing the other **node**.
-    extended: true
-};
-estraverse.traverse(tree, {
-    enter: function (node) { },
-
-    // Skip the `argument` property of each node
-    fallback: function(node) {
-        return Object.keys(node).filter(function(key) {
-            return key !== 'argument';
-        });
-    }
-});
-```
-
-### License
-
-Copyright (C) 2012-2016 [Yusuke Suzuki](http://github.com/Constellation)
- (twitter: [@Constellation](http://twitter.com/Constellation)) and other contributors.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- `path`: Use instead of the `PATH` environment variable.
+- `pathExt`: Use instead of the `PATHEXT` environment variable.
+- `all`: Return all matches, instead of just the first one.  Note that
+  this means the function returns an array of strings instead of a
+  single string.
