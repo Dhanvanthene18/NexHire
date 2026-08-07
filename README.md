@@ -1,89 +1,206 @@
-# cross-spawn
+# convert-source-map [![Build Status][ci-image]][ci-url]
 
-[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][ci-image]][ci-url] [![Build status][appveyor-image]][appveyor-url]
-
-[npm-url]:https://npmjs.org/package/cross-spawn
-[downloads-image]:https://img.shields.io/npm/dm/cross-spawn.svg
-[npm-image]:https://img.shields.io/npm/v/cross-spawn.svg
-[ci-url]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml
-[ci-image]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml/badge.svg
-[appveyor-url]:https://ci.appveyor.com/project/satazor/node-cross-spawn
-[appveyor-image]:https://img.shields.io/appveyor/ci/satazor/node-cross-spawn/master.svg
-
-A cross platform solution to node's spawn and spawnSync.
-
-## Installation
-
-Node.js version 8 and up:
-`$ npm install cross-spawn`
-
-Node.js version 7 and under:
-`$ npm install cross-spawn@6`
-
-## Why
-
-Node has issues when using spawn on Windows:
-
-- It ignores [PATHEXT](https://github.com/joyent/node/issues/2318)
-- It does not support [shebangs](https://en.wikipedia.org/wiki/Shebang_(Unix))
-- Has problems running commands with [spaces](https://github.com/nodejs/node/issues/7367)
-- Has problems running commands with posix relative paths (e.g.: `./my-folder/my-executable`)
-- Has an [issue](https://github.com/moxystudio/node-cross-spawn/issues/82) with command shims (files in `node_modules/.bin/`), where arguments with quotes and parenthesis would result in [invalid syntax error](https://github.com/moxystudio/node-cross-spawn/blob/e77b8f22a416db46b6196767bcd35601d7e11d54/test/index.test.js#L149)
-- No `options.shell` support on node `<v4.8`
-
-All these issues are handled correctly by `cross-spawn`.
-There are some known modules, such as [win-spawn](https://github.com/ForbesLindesay/win-spawn), that try to solve this but they are either broken or provide faulty escaping of shell arguments.
-
-
-## Usage
-
-Exactly the same way as node's [`spawn`](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) or [`spawnSync`](https://nodejs.org/api/child_process.html#child_process_child_process_spawnsync_command_args_options), so it's a drop in replacement.
-
+Converts a source-map from/to  different formats and allows adding/changing properties.
 
 ```js
-const spawn = require('cross-spawn');
+var convert = require('convert-source-map');
 
-// Spawn NPM asynchronously
-const child = spawn('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
+var json = convert
+  .fromComment('//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVpbGQvZm9vLm1pbi5qcyIsInNvdXJjZXMiOlsic3JjL2Zvby5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIvIn0=')
+  .toJSON();
 
-// Spawn NPM synchronously
-const result = spawn.sync('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
+var modified = convert
+  .fromComment('//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVpbGQvZm9vLm1pbi5qcyIsInNvdXJjZXMiOlsic3JjL2Zvby5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIvIn0=')
+  .setProperty('sources', [ 'SRC/FOO.JS' ])
+  .toJSON();
+
+console.log(json);
+console.log(modified);
+```
+
+```json
+{"version":3,"file":"build/foo.min.js","sources":["src/foo.js"],"names":[],"mappings":"AAAA","sourceRoot":"/"}
+{"version":3,"file":"build/foo.min.js","sources":["SRC/FOO.JS"],"names":[],"mappings":"AAAA","sourceRoot":"/"}
+```
+
+## Upgrading
+
+Prior to v2.0.0, the `fromMapFileComment` and `fromMapFileSource` functions took a String directory path and used that to resolve & read the source map file from the filesystem. However, this made the library limited to nodejs environments and broke on sources with querystrings.
+
+In v2.0.0, you now need to pass a function that does the file reading. It will receive the source filename as a String that you can resolve to a filesystem path, URL, or anything else.
+
+If you are using `convert-source-map` in nodejs and want the previous behavior, you'll use a function like such:
+
+```diff
++ var fs = require('fs'); // Import the fs module to read a file
++ var path = require('path'); // Import the path module to resolve a path against your directory
+- var conv = convert.fromMapFileSource(css, '../my-dir');
++ var conv = convert.fromMapFileSource(css, function (filename) {
++   return fs.readFileSync(path.resolve('../my-dir', filename), 'utf-8');
++ });
+```
+
+## API
+
+### fromObject(obj)
+
+Returns source map converter from given object.
+
+### fromJSON(json)
+
+Returns source map converter from given json string.
+
+### fromURI(uri)
+
+Returns source map converter from given uri encoded json string.
+
+### fromBase64(base64)
+
+Returns source map converter from given base64 encoded json string.
+
+### fromComment(comment)
+
+Returns source map converter from given base64 or uri encoded json string prefixed with `//# sourceMappingURL=...`.
+
+### fromMapFileComment(comment, readMap)
+
+Returns source map converter from given `filename` by parsing `//# sourceMappingURL=filename`.
+
+`readMap` must be a function which receives the source map filename and returns either a String or Buffer of the source map (if read synchronously), or a `Promise` containing a String or Buffer of the source map (if read asynchronously).
+
+If `readMap` doesn't return a `Promise`, `fromMapFileComment` will return a source map converter synchronously.
+
+If `readMap` returns a `Promise`, `fromMapFileComment` will also return `Promise`. The `Promise` will be either resolved with the source map converter or rejected with an error.
+
+#### Examples
+
+**Synchronous read in Node.js:**
+
+```js
+var convert = require('convert-source-map');
+var fs = require('fs');
+
+function readMap(filename) {
+  return fs.readFileSync(filename, 'utf8');
+}
+
+var json = convert
+  .fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
+  .toJSON();
+console.log(json);
 ```
 
 
-## Caveats
+**Asynchronous read in Node.js:**
 
-### Using `options.shell` as an alternative to `cross-spawn`
+```js
+var convert = require('convert-source-map');
+var { promises: fs } = require('fs'); // Notice the `promises` import
 
-Starting from node `v4.8`, `spawn` has a `shell` option that allows you run commands from within a shell. This new option solves
-the [PATHEXT](https://github.com/joyent/node/issues/2318) issue but:
+function readMap(filename) {
+  return fs.readFile(filename, 'utf8');
+}
 
-- It's not supported in node `<v4.8`
-- You must manually escape the command and arguments which is very error prone, specially when passing user input
-- There are a lot of other unresolved issues from the [Why](#why) section that you must take into account
+var converter = await convert.fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
+var json = converter.toJSON();
+console.log(json);
+```
 
-If you are using the `shell` option to spawn a command in a cross platform way, consider using `cross-spawn` instead. You have been warned.
+**Asynchronous read in the browser:**
 
-### `options.shell` support
+```js
+var convert = require('convert-source-map');
 
-While `cross-spawn` adds support for `options.shell` in node `<v4.8`, all of its enhancements are disabled.
+async function readMap(url) {
+  const res = await fetch(url);
+  return res.text();
+}
 
-This mimics the Node.js behavior. More specifically, the command and its arguments will not be automatically escaped nor shebang support will be offered. This is by design because if you are using `options.shell` you are probably targeting a specific platform anyway and you don't want things to get into your way.
+const converter = await convert.fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
+var json = converter.toJSON();
+console.log(json);
+```
 
-### Shebangs support
+### fromSource(source)
 
-While `cross-spawn` handles shebangs on Windows, its support is limited. More specifically, it just supports `#!/usr/bin/env <program>` where `<program>` must not contain any arguments.   
-If you would like to have the shebang support improved, feel free to contribute via a pull-request.
+Finds last sourcemap comment in file and returns source map converter or returns `null` if no source map comment was found.
 
-Remember to always test your code on Windows!
+### fromMapFileSource(source, readMap)
 
+Finds last sourcemap comment in file and returns source map converter or returns `null` if no source map comment was found.
 
-## Tests
+`readMap` must be a function which receives the source map filename and returns either a String or Buffer of the source map (if read synchronously), or a `Promise` containing a String or Buffer of the source map (if read asynchronously).
 
-`$ npm test`   
-`$ npm test -- --watch` during development
+If `readMap` doesn't return a `Promise`, `fromMapFileSource` will return a source map converter synchronously.
 
+If `readMap` returns a `Promise`, `fromMapFileSource` will also return `Promise`. The `Promise` will be either resolved with the source map converter or rejected with an error.
 
-## License
+### toObject()
 
-Released under the [MIT License](https://www.opensource.org/licenses/mit-license.php).
+Returns a copy of the underlying source map.
+
+### toJSON([space])
+
+Converts source map to json string. If `space` is given (optional), this will be passed to
+[JSON.stringify](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/JSON/stringify) when the
+JSON string is generated.
+
+### toURI()
+
+Converts source map to uri encoded json string.
+
+### toBase64()
+
+Converts source map to base64 encoded json string.
+
+### toComment([options])
+
+Converts source map to an inline comment that can be appended to the source-file.
+
+By default, the comment is formatted like: `//# sourceMappingURL=...`, which you would
+normally see in a JS source file.
+
+When `options.encoding == 'uri'`, the data will be uri encoded, otherwise they will be base64 encoded.
+
+When `options.multiline == true`, the comment is formatted like: `/*# sourceMappingURL=... */`, which you would find in a CSS source file.
+
+### addProperty(key, value)
+
+Adds given property to the source map. Throws an error if property already exists.
+
+### setProperty(key, value)
+
+Sets given property to the source map. If property doesn't exist it is added, otherwise its value is updated.
+
+### getProperty(key)
+
+Gets given property of the source map.
+
+### removeComments(src)
+
+Returns `src` with all source map comments removed
+
+### removeMapFileComments(src)
+
+Returns `src` with all source map comments pointing to map files removed.
+
+### commentRegex
+
+Provides __a fresh__ RegExp each time it is accessed. Can be used to find source map comments.
+
+Breaks down a source map comment into groups: Groups: 1: media type, 2: MIME type, 3: charset, 4: encoding, 5: data.
+
+### mapFileCommentRegex
+
+Provides __a fresh__ RegExp each time it is accessed. Can be used to find source map comments pointing to map files.
+
+### generateMapFileComment(file, [options])
+
+Returns a comment that links to an external source map via `file`.
+
+By default, the comment is formatted like: `//# sourceMappingURL=...`, which you would normally see in a JS source file.
+
+When `options.multiline == true`, the comment is formatted like: `/*# sourceMappingURL=... */`, which you would find in a CSS source file.
+
+[ci-url]: https://github.com/thlorenz/convert-source-map/actions?query=workflow:ci
+[ci-image]: https://img.shields.io/github/workflow/status/thlorenz/convert-source-map/CI?style=flat-square
