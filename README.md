@@ -1,106 +1,40 @@
-# brace-expansion
+# Acorn-JSX
 
-[Brace expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
-as known from sh/bash, in JavaScript.
+[![Build Status](https://travis-ci.org/acornjs/acorn-jsx.svg?branch=master)](https://travis-ci.org/acornjs/acorn-jsx)
+[![NPM version](https://img.shields.io/npm/v/acorn-jsx.svg)](https://www.npmjs.org/package/acorn-jsx)
 
-[![CI](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml)
-[![downloads](https://img.shields.io/npm/dm/brace-expansion.svg)](https://www.npmjs.org/package/brace-expansion)
+This is plugin for [Acorn](http://marijnhaverbeke.nl/acorn/) - a tiny, fast JavaScript parser, written completely in JavaScript.
 
-## Example
+It was created as an experimental alternative, faster [React.js JSX](http://facebook.github.io/react/docs/jsx-in-depth.html) parser. Later, it replaced the [official parser](https://github.com/facebookarchive/esprima) and these days is used by many prominent development tools.
 
-```js
-import { expand } from 'brace-expansion'
+## Transpiler
 
-expand('file-{a,b,c}.jpg')
-// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
+Please note that this tool only parses source code to JSX AST, which is useful for various language tools and services. If you want to transpile your code to regular ES5-compliant JavaScript with source map, check out [Babel](https://babeljs.io/) and [Buble](https://buble.surge.sh/) transpilers which use `acorn-jsx` under the hood.
 
-expand('-v{,,}')
-// => ['-v', '-v', '-v']
+## Usage
 
-expand('file{0..2}.jpg')
-// => ['file0.jpg', 'file1.jpg', 'file2.jpg']
+Requiring this module provides you with an Acorn plugin that you can use like this:
 
-expand('file-{a..c}.jpg')
-// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
-
-expand('file{2..0}.jpg')
-// => ['file2.jpg', 'file1.jpg', 'file0.jpg']
-
-expand('file{0..4..2}.jpg')
-// => ['file0.jpg', 'file2.jpg', 'file4.jpg']
-
-expand('file-{a..e..2}.jpg')
-// => ['file-a.jpg', 'file-c.jpg', 'file-e.jpg']
-
-expand('file{00..10..5}.jpg')
-// => ['file00.jpg', 'file05.jpg', 'file10.jpg']
-
-expand('{{A..C},{a..c}}')
-// => ['A', 'B', 'C', 'a', 'b', 'c']
-
-expand('ppp{,config,oe{,conf}}')
-// => ['ppp', 'pppconfig', 'pppoe', 'pppoeconf']
+```javascript
+var acorn = require("acorn");
+var jsx = require("acorn-jsx");
+acorn.Parser.extend(jsx()).parse("my(<jsx/>, 'code');");
 ```
 
-## API
+Note that official spec doesn't support mix of XML namespaces and object-style access in tag names (#27) like in `<namespace:Object.Property />`, so it was deprecated in `acorn-jsx@3.0`. If you still want to opt-in to support of such constructions, you can pass the following option:
 
-```js
-import { expand } from 'brace-expansion'
+```javascript
+acorn.Parser.extend(jsx({ allowNamespacedObjects: true }))
 ```
 
-### const expanded = expand(str, [options])
+Also, since most apps use pure React transformer, a new option was introduced that allows to prohibit namespaces completely:
 
-Return an array of all possible and valid expansions of `str`. If
-none are found, `[str]` is returned.
-
-The `options` object can provide a `max` value to cap the number
-of expansions allowed. This is limited to `100_000` by default,
-to prevent DoS attacks.
-
-```js
-const expansions = expand('{1..100}'.repeat(5), {
-  max: 100,
-})
-// expansions.length will be 100, not 100^5
+```javascript
+acorn.Parser.extend(jsx({ allowNamespaces: false }))
 ```
 
-The `options` object can also provide a `maxLength` value to cap the
-total number of characters across all expansions. This is limited to
-`4_000_000` by default, to prevent memory exhaustion from inputs whose
-result count stays under `max` while each result grows very long.
+Note that by default `allowNamespaces` is enabled for spec compliancy.
 
-```js
-const expansions = expand('{a,b}'.repeat(1500), {
-  maxLength: 100,
-})
-// the combined length of expansions will not exceed 100 characters
-```
+## License
 
-Valid expansions are:
-
-```js
-;/^(.*,)+(.+)?$/
-// {a,b,...}
-```
-
-A comma separated list of options, like `{a,b}` or `{a,{b,c}}` or `{,a,}`.
-
-```js
-;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
-// {x..y[..incr]}
-```
-
-A numeric sequence from `x` to `y` inclusive, with optional increment.
-If `x` or `y` start with a leading `0`, all the numbers will be padded
-to have equal length. Negative numbers and backwards iteration work too.
-
-```js
-;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
-// {x..y[..incr]}
-```
-
-An alphabetic sequence from `x` to `y` inclusive, with optional increment.
-`x` and `y` must be exactly one character, and if given, `incr` must be a
-number.
-
-For compatibility reasons, the string `${` is not eligible for brace expansion.
+This plugin is issued under the [MIT license](./LICENSE).
