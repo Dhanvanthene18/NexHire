@@ -1,58 +1,83 @@
 {
-  "name": "punycode",
-  "version": "2.3.1",
-  "description": "A robust Punycode converter that fully complies to RFC 3492 and RFC 5891, and works on nearly all JavaScript platforms.",
-  "homepage": "https://mths.be/punycode",
-  "main": "punycode.js",
-  "jsnext:main": "punycode.es6.js",
-  "module": "punycode.es6.js",
-  "engines": {
-    "node": ">=6"
+  "name": "picomatch",
+  "description": "Blazing fast and accurate glob matcher written in JavaScript, with no dependencies and full support for standard and extended Bash glob features, including braces, extglobs, POSIX brackets, and regular expressions.",
+  "version": "4.0.5",
+  "homepage": "https://github.com/micromatch/picomatch",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "funding": "https://github.com/sponsors/jonschlinkert",
+  "repository": "micromatch/picomatch",
+  "bugs": {
+    "url": "https://github.com/micromatch/picomatch/issues"
   },
-  "keywords": [
-    "punycode",
-    "unicode",
-    "idn",
-    "idna",
-    "dns",
-    "url",
-    "domain"
-  ],
   "license": "MIT",
-  "author": {
-    "name": "Mathias Bynens",
-    "url": "https://mathiasbynens.be/"
-  },
-  "contributors": [
-    {
-      "name": "Mathias Bynens",
-      "url": "https://mathiasbynens.be/"
-    }
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mathiasbynens/punycode.js.git"
-  },
-  "bugs": "https://github.com/mathiasbynens/punycode.js/issues",
   "files": [
-    "LICENSE-MIT.txt",
-    "punycode.js",
-    "punycode.es6.js"
+    "index.js",
+    "posix.js",
+    "lib"
   ],
+  "sideEffects": false,
+  "main": "index.js",
+  "engines": {
+    "node": ">=12"
+  },
   "scripts": {
-    "test": "mocha tests",
-    "build": "node scripts/prepublish.js"
+    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache --report-unused-disable-directives --ignore-path .gitignore .",
+    "mocha": "mocha --reporter dot",
+    "test": "npm run lint && npm run mocha",
+    "test:ci": "npm run test:cover",
+    "test:cover": "nyc npm run mocha"
   },
   "devDependencies": {
-    "codecov": "^3.8.3",
-    "nyc": "^15.1.0",
-    "mocha": "^10.2.0"
+    "eslint": "^8.57.0",
+    "fill-range": "^7.0.1",
+    "gulp-format-md": "^2.0.0",
+    "mocha": "^10.4.0",
+    "nyc": "^15.1.0"
   },
-  "jspm": {
-    "map": {
-      "./punycode.js": {
-        "node": "@node/punycode"
-      }
-    }
+  "keywords": [
+    "glob",
+    "match",
+    "picomatch"
+  ],
+  "nyc": {
+    "reporter": [
+      "html",
+      "lcov",
+      "text-summary",
+      "cobertura"
+    ]
+  },
+  "verb": {
+    "toc": {
+      "render": true,
+      "method": "preWrite",
+      "maxdepth": 3
+    },
+    "layout": "empty",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "lint": {
+      "reflinks": true
+    },
+    "related": {
+      "list": [
+        "braces",
+        "micromatch"
+      ]
+    },
+    "reflinks": [
+      "braces",
+      "expand-brackets",
+      "extglob",
+      "fill-range",
+      "micromatch",
+      "minimatch",
+      "nanomatch",
+      "picomatch"
+    ]
   }
 }
