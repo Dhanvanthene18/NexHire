@@ -1,115 +1,131 @@
-# file-entry-cache
-> Super simple cache for file metadata, useful for process that work on a given series of files
-> and that only need to repeat the job on the changed ones since the previous run of the process — Edit
+# fast-json-stable-stringify
 
-[![NPM Version](https://img.shields.io/npm/v/file-entry-cache.svg?style=flat)](https://npmjs.org/package/file-entry-cache)
-[![tests](https://github.com/jaredwray/file-entry-cache/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/jaredwray/file-entry-cache/actions/workflows/tests.yaml)
-[![codecov](https://codecov.io/github/jaredwray/file-entry-cache/graph/badge.svg?token=37tZMQE0Sy)](https://codecov.io/github/jaredwray/file-entry-cache)
-[![npm](https://img.shields.io/npm/dm/file-entry-cache)](https://npmjs.com/package/file-entry-cache)
+Deterministic `JSON.stringify()` - a faster version of [@substack](https://github.com/substack)'s json-stable-strigify without [jsonify](https://github.com/substack/jsonify).
 
+You can also pass in a custom comparison function.
 
-## install
+[![Build Status](https://travis-ci.org/epoberezkin/fast-json-stable-stringify.svg?branch=master)](https://travis-ci.org/epoberezkin/fast-json-stable-stringify)
+[![Coverage Status](https://coveralls.io/repos/github/epoberezkin/fast-json-stable-stringify/badge.svg?branch=master)](https://coveralls.io/github/epoberezkin/fast-json-stable-stringify?branch=master)
 
-```bash
-npm i --save file-entry-cache
+# example
+
+``` js
+var stringify = require('fast-json-stable-stringify');
+var obj = { c: 8, b: [{z:6,y:5,x:4},7], a: 3 };
+console.log(stringify(obj));
 ```
 
-## Usage
-
-The module exposes two functions `create` and `createFromFile`.
-
-## `create(cacheName, [directory, useCheckSum])`
-- **cacheName**: the name of the cache to be created
-- **directory**: Optional the directory to load the cache from
-- **usecheckSum**: Whether to use md5 checksum to verify if file changed. If false the default will be to use the mtime and size of the file.
-
-## `createFromFile(pathToCache, [useCheckSum])`
-- **pathToCache**: the path to the cache file (this combines the cache name and directory)
-- **useCheckSum**: Whether to use md5 checksum to verify if file changed. If false the default will be to use the mtime and size of the file.
-
-```js
-// loads the cache, if one does not exists for the given
-// Id a new one will be prepared to be created
-var fileEntryCache = require('file-entry-cache');
-
-var cache = fileEntryCache.create('testCache');
-
-var files = expand('../fixtures/*.txt');
-
-// the first time this method is called, will return all the files
-var oFiles = cache.getUpdatedFiles(files);
-
-// this will persist this to disk checking each file stats and
-// updating the meta attributes `size` and `mtime`.
-// custom fields could also be added to the meta object and will be persisted
-// in order to retrieve them later
-cache.reconcile();
-
-// use this if you want the non visited file entries to be kept in the cache
-// for more than one execution
-//
-// cache.reconcile( true /* noPrune */)
-
-// on a second run
-var cache2 = fileEntryCache.create('testCache');
-
-// will return now only the files that were modified or none
-// if no files were modified previous to the execution of this function
-var oFiles = cache.getUpdatedFiles(files);
-
-// if you want to prevent a file from being considered non modified
-// something useful if a file failed some sort of validation
-// you can then remove the entry from the cache doing
-cache.removeEntry('path/to/file'); // path to file should be the same path of the file received on `getUpdatedFiles`
-// that will effectively make the file to appear again as modified until the validation is passed. In that
-// case you should not remove it from the cache
-
-// if you need all the files, so you can determine what to do with the changed ones
-// you can call
-var oFiles = cache.normalizeEntries(files);
-
-// oFiles will be an array of objects like the following
-entry = {
-  key: 'some/name/file', the path to the file
-  changed: true, // if the file was changed since previous run
-  meta: {
-    size: 3242, // the size of the file
-    mtime: 231231231, // the modification time of the file
-    data: {} // some extra field stored for this file (useful to save the result of a transformation on the file
-  }
-}
+output:
 
 ```
-
-## Motivation for this module
-
-I needed a super simple and dumb **in-memory cache** with optional disk persistence (write-back cache) in order to make
-a script that will beautify files with `esformatter` to execute only on the files that were changed since the last run.
-
-In doing so the process of beautifying files was reduced from several seconds to a small fraction of a second.
-
-This module uses [flat-cache](https://www.npmjs.com/package/flat-cache) a super simple `key/value` cache storage with
-optional file persistance.
-
-The main idea is to read the files when the task begins, apply the transforms required, and if the process succeed,
-then store the new state of the files. The next time this module request for `getChangedFiles` will return only
-the files that were modified. Making the process to end faster.
-
-This module could also be used by processes that modify the files applying a transform, in that case the result of the
-transform could be stored in the `meta` field, of the entries. Anything added to the meta field will be persisted.
-Those processes won't need to call `getChangedFiles` they will instead call `normalizeEntries` that will return the
-entries with a `changed` field that can be used to determine if the file was changed or not. If it was not changed
-the transformed stored data could be used instead of actually applying the transformation, saving time in case of only
-a few files changed.
-
-In the worst case scenario all the files will be processed. In the best case scenario only a few of them will be processed.
-
-## Important notes
-- The values set on the meta attribute of the entries should be `stringify-able` ones if possible, flat-cache uses `circular-json` to try to persist circular structures, but this should be considered experimental. The best results are always obtained with non circular values
-- All the changes to the cache state are done to memory first and only persisted after reconcile.
-
-## License
-
-MIT
+{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}
+```
 
 
+# methods
+
+``` js
+var stringify = require('fast-json-stable-stringify')
+```
+
+## var str = stringify(obj, opts)
+
+Return a deterministic stringified string `str` from the object `obj`.
+
+
+## options
+
+### cmp
+
+If `opts` is given, you can supply an `opts.cmp` to have a custom comparison
+function for object keys. Your function `opts.cmp` is called with these
+parameters:
+
+``` js
+opts.cmp({ key: akey, value: avalue }, { key: bkey, value: bvalue })
+```
+
+For example, to sort on the object key names in reverse order you could write:
+
+``` js
+var stringify = require('fast-json-stable-stringify');
+
+var obj = { c: 8, b: [{z:6,y:5,x:4},7], a: 3 };
+var s = stringify(obj, function (a, b) {
+    return a.key < b.key ? 1 : -1;
+});
+console.log(s);
+```
+
+which results in the output string:
+
+```
+{"c":8,"b":[{"z":6,"y":5,"x":4},7],"a":3}
+```
+
+Or if you wanted to sort on the object values in reverse order, you could write:
+
+```
+var stringify = require('fast-json-stable-stringify');
+
+var obj = { d: 6, c: 5, b: [{z:3,y:2,x:1},9], a: 10 };
+var s = stringify(obj, function (a, b) {
+    return a.value < b.value ? 1 : -1;
+});
+console.log(s);
+```
+
+which outputs:
+
+```
+{"d":6,"c":5,"b":[{"z":3,"y":2,"x":1},9],"a":10}
+```
+
+### cycles
+
+Pass `true` in `opts.cycles` to stringify circular property as `__cycle__` - the result will not be a valid JSON string in this case.
+
+TypeError will be thrown in case of circular object without this option.
+
+
+# install
+
+With [npm](https://npmjs.org) do:
+
+```
+npm install fast-json-stable-stringify
+```
+
+
+# benchmark
+
+To run benchmark (requires Node.js 6+):
+```
+node benchmark
+```
+
+Results:
+```
+fast-json-stable-stringify x 17,189 ops/sec ±1.43% (83 runs sampled)
+json-stable-stringify x 13,634 ops/sec ±1.39% (85 runs sampled)
+fast-stable-stringify x 20,212 ops/sec ±1.20% (84 runs sampled)
+faster-stable-stringify x 15,549 ops/sec ±1.12% (84 runs sampled)
+The fastest is fast-stable-stringify
+```
+
+
+## Enterprise support
+
+fast-json-stable-stringify package is a part of [Tidelift enterprise subscription](https://tidelift.com/subscription/pkg/npm-fast-json-stable-stringify?utm_source=npm-fast-json-stable-stringify&utm_medium=referral&utm_campaign=enterprise&utm_term=repo) - it provides a centralised commercial support to open-source software users, in addition to the support provided by software maintainers.
+
+
+## Security contact
+
+To report a security vulnerability, please use the
+[Tidelift security contact](https://tidelift.com/security).
+Tidelift will coordinate the fix and disclosure. Please do NOT report security vulnerability via GitHub issues.
+
+
+# license
+
+[MIT](https://github.com/epoberezkin/fast-json-stable-stringify/blob/master/LICENSE)

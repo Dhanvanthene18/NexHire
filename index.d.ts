@@ -1,12 +1,4 @@
-import { Parser } from 'acorn' 
-
-declare const jsx: (options?: jsx.Options) => (BaseParser: typeof Parser) => typeof Parser;
-
-declare namespace jsx {
-  interface Options {
-    allowNamespacedObjects?: boolean;
-    allowNamespaces?: boolean;
-  }
+declare module 'fast-json-stable-stringify' {
+  function stringify(obj: any): string;
+  export = stringify;
 }
-
-export = jsx;
