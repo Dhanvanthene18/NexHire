@@ -1,17 +1,23 @@
 'use strict';
+const fs = require('fs');
+const {promisify} = require('util');
 
-const pico = require('./lib/picomatch');
-const utils = require('./lib/utils');
+const pAccess = promisify(fs.access);
 
-function picomatch(glob, options, returnState = false) {
-  // default to os.platform()
-  if (options && (options.windows === null || options.windows === undefined)) {
-    // don't mutate the original options object
-    options = { ...options, windows: utils.isWindows() };
-  }
+module.exports = async path => {
+	try {
+		await pAccess(path);
+		return true;
+	} catch (_) {
+		return false;
+	}
+};
 
-  return pico(glob, options, returnState);
-}
-
-Object.assign(picomatch, pico);
-module.exports = picomatch;
+module.exports.sync = path => {
+	try {
+		fs.accessSync(path);
+		return true;
+	} catch (_) {
+		return false;
+	}
+};
