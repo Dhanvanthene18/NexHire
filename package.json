@@ -1,37 +1,74 @@
 {
-  "name": "gensync",
-  "version": "1.0.0-beta.2",
+  "name": "escalade",
+  "version": "3.2.0",
+  "repository": "lukeed/escalade",
+  "description": "A tiny (183B to 210B) and fast utility to ascend parent directories",
+  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "types": "index.d.ts",
   "license": "MIT",
-  "description": "Allows users to use generators in order to write common functions that can be both sync or async.",
-  "main": "index.js",
-  "author": "Logan Smyth <loganfsmyth@gmail.com>",
-  "homepage": "https://github.com/loganfsmyth/gensync",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/loganfsmyth/gensync.git"
+  "author": {
+    "name": "Luke Edwards",
+    "email": "luke.edwards05@gmail.com",
+    "url": "https://lukeed.com"
   },
-  "scripts": {
-    "test": "jest"
+  "exports": {
+    ".": [
+      {
+        "import": {
+          "types": "./index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./index.d.ts",
+          "default": "./dist/index.js"
+        }
+      },
+      "./dist/index.js"
+    ],
+    "./sync": [
+      {
+        "import": {
+          "types": "./sync/index.d.mts",
+          "default": "./sync/index.mjs"
+        },
+        "require": {
+          "types": "./sync/index.d.ts",
+          "default": "./sync/index.js"
+        }
+      },
+      "./sync/index.js"
+    ]
+  },
+  "files": [
+    "*.d.mts",
+    "*.d.ts",
+    "dist",
+    "sync"
+  ],
+  "modes": {
+    "sync": "src/sync.js",
+    "default": "src/async.js"
   },
   "engines": {
-    "node": ">=6.9.0"
+    "node": ">=6"
+  },
+  "scripts": {
+    "build": "bundt",
+    "pretest": "npm run build",
+    "test": "uvu -r esm test -i fixtures"
   },
   "keywords": [
-    "async",
-    "sync",
-    "generators",
-    "async-await",
-    "callbacks"
+    "find",
+    "parent",
+    "parents",
+    "directory",
+    "search",
+    "walk"
   ],
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.6.1",
-    "eslint": "^4.19.1",
-    "eslint-config-prettier": "^2.9.0",
-    "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-prettier": "^2.6.0",
-    "flow-bin": "^0.71.0",
-    "jest": "^22.4.3",
-    "prettier": "^1.12.1"
+    "bundt": "1.1.1",
+    "esm": "3.2.25",
+    "uvu": "0.3.3"
   }
 }

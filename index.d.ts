@@ -1,28 +1,15 @@
-declare const pathExists: {
-	/**
-	Check if a path exists.
+type Promisable<T> = T | Promise<T>;
 
-	@returns Whether the path exists.
+declare namespace escalade {
+	export type Callback = (
+		directory: string,
+		files: string[],
+	) => Promisable<string | false | void>;
+}
 
-	@example
-	```
-	// foo.ts
-	import pathExists = require('path-exists');
+declare function escalade(
+	directory: string,
+	callback: escalade.Callback,
+): Promise<string | void>;
 
-	(async () => {
-		console.log(await pathExists('foo.ts'));
-		//=> true
-	})();
-	```
-	*/
-	(path: string): Promise<boolean>;
-
-	/**
-	Synchronously check if a path exists.
-
-	@returns Whether the path exists.
-	*/
-	sync(path: string): boolean;
-};
-
-export = pathExists;
+export = escalade;
