@@ -1,122 +1,196 @@
-iMurmurHash.js
-==============
+# gensync
 
-An incremental implementation of the MurmurHash3 (32-bit) hashing algorithm for JavaScript based on [Gary Court's implementation](https://github.com/garycourt/murmurhash-js) with [kazuyukitanimura's modifications](https://github.com/kazuyukitanimura/murmurhash-js).
+This module allows for developers to write common code that can share
+implementation details, hiding whether an underlying request happens
+synchronously or asynchronously. This is in contrast with many current Node
+APIs which explicitly implement the same API twice, once with calls to
+synchronous functions, and once with asynchronous functions.
 
-This version works significantly faster than the non-incremental version if you need to hash many small strings into a single hash, since string concatenation (to build the single string to pass the non-incremental version) is fairly costly. In one case tested, using the incremental version was about 50% faster than concatenating 5-10 strings and then hashing.
+Take for example `fs.readFile` and `fs.readFileSync`, if you're writing an API
+that loads a file and then performs a synchronous operation on the data, it
+can be frustrating to maintain two parallel functions.
 
-Installation
-------------
 
-To use iMurmurHash in the browser, [download the latest version](https://raw.github.com/jensyt/imurmurhash-js/master/imurmurhash.min.js) and include it as a script on your site.
+## Example
 
-```html
-<script type="text/javascript" src="/scripts/imurmurhash.min.js"></script>
-<script>
-// Your code here, access iMurmurHash using the global object MurmurHash3
-</script>
+```js
+const fs = require("fs");
+const gensync = require("gensync");
+
+const readFile = gensync({
+  sync: fs.readFileSync,
+  errback: fs.readFile,
+});
+
+const myOperation = gensync(function* (filename) {
+  const code = yield* readFile(filename, "utf8");
+
+  return "// some custom prefix\n" + code;
+});
+
+// Load and add the prefix synchronously:
+const result = myOperation.sync("./some-file.js");
+
+// Load and add the prefix asynchronously with promises:
+myOperation.async("./some-file.js").then(result => {
+
+});
+
+// Load and add the prefix asynchronously with promises:
+myOperation.errback("./some-file.js", (err, result) => {
+
+});
 ```
 
----
+This could even be exposed as your official API by doing
+```js
+// Using the common 'Sync' suffix for sync functions, and 'Async' suffix for
+// promise-returning versions.
+exports.myOperationSync = myOperation.sync;
+exports.myOperationAsync = myOperation.async;
+exports.myOperation = myOperation.errback;
+```
+or potentially expose one of the async versions as the default, with a
+`.sync` property on the function to expose the synchronous version.
+```js
+module.exports = myOperation.errback;
+module.exports.sync = myOperation.sync;
+````
 
-To use iMurmurHash in Node.js, install the module using NPM:
 
-```bash
-npm install imurmurhash
+## API
+
+### gensync(generatorFnOrOptions)
+
+Returns a function that can be "await"-ed in another `gensync` generator
+function, or executed via
+
+* `.sync(...args)` - Returns the computed value, or throws.
+* `.async(...args)` - Returns a promise for the computed value.
+* `.errback(...args, (err, result) => {})` - Calls the callback with the computed value, or error.
+
+
+#### Passed a generator
+
+Wraps the generator to populate the `.sync`/`.async`/`.errback` helpers above to
+allow for evaluation of the generator for the final value.
+
+##### Example
+
+```js
+const readFile = function* () {
+  return 42;
+};
+
+const readFileAndMore = gensync(function* (){
+  const val = yield* readFile();
+  return 42 + val;
+});
+
+// In general cases
+const code = readFileAndMore.sync("./file.js", "utf8");
+readFileAndMore.async("./file.js", "utf8").then(code => {})
+readFileAndMore.errback("./file.js", "utf8", (err, code) => {});
+
+// In a generator being called indirectly with .sync/.async/.errback
+const code = yield* readFileAndMore("./file.js", "utf8");
 ```
 
-Then simply include it in your scripts:
 
-```javascript
-MurmurHash3 = require('imurmurhash');
+#### Passed an options object
+
+* `opts.sync`
+
+  Example: `(...args) => 4`
+
+  A function that will be called when `.sync()` is called on the `gensync()`
+  result, or when the result is passed to `yield*` in another generator that
+  is being run synchronously.
+
+  Also called for `.async()` calls if no async handlers are provided.
+
+* `opts.async`
+
+  Example: `async (...args) => 4`
+
+  A function that will be called when `.async()` or `.errback()` is called on
+  the `gensync()` result, or when the result is passed to `yield*` in another
+  generator that is being run asynchronously.
+
+* `opts.errback`
+
+  Example: `(...args, cb) => cb(null, 4)`
+
+  A function that will be called when `.async()` or `.errback()` is called on
+  the `gensync()` result, or when the result is passed to `yield*` in another
+  generator that is being run asynchronously.
+
+  This option allows for simpler compatibility with many existing Node APIs,
+  and also avoids introducing the extra even loop turns that promises introduce
+  to access the result value.
+
+* `opts.name`
+
+  Example: `"readFile"`
+
+  A string name to apply to the returned function. If no value is provided,
+  the name of `errback`/`async`/`sync` functions will be used, with any
+  `Sync` or `Async` suffix stripped off. If the callback is simply named
+  with ES6 inference (same name as the options property), the name is ignored.
+
+* `opts.arity`
+
+  Example: `4`
+
+  A number for the length to set on the returned function. If no value
+  is provided, the length will be carried over from the `sync` function's
+  `length` value.
+
+##### Example
+
+```js
+const readFile = gensync({
+  sync: fs.readFileSync,
+  errback: fs.readFile,
+});
+
+const code = readFile.sync("./file.js", "utf8");
+readFile.async("./file.js", "utf8").then(code => {})
+readFile.errback("./file.js", "utf8", (err, code) => {});
 ```
 
-Quick Example
--------------
 
-```javascript
-// Create the initial hash
-var hashState = MurmurHash3('string');
+### gensync.all(iterable)
 
-// Incrementally add text
-hashState.hash('more strings');
-hashState.hash('even more strings');
+`Promise.all`-like combinator that works with an iterable of generator objects
+that could be passed to `yield*` within a gensync generator.
 
-// All calls can be chained if desired
-hashState.hash('and').hash('some').hash('more');
+#### Example
 
-// Get a result
-hashState.result();
-// returns 0xe4ccfe6b
+```js
+const loadFiles = gensync(function* () {
+  return yield* gensync.all([
+    readFile("./one.js"),
+    readFile("./two.js"),
+    readFile("./three.js"),
+  ]);
+});
 ```
 
-Functions
----------
 
-### MurmurHash3 ([string], [seed])
-Get a hash state object, optionally initialized with the given _string_ and _seed_. _Seed_ must be a positive integer if provided. Calling this function without the `new` keyword will return a cached state object that has been reset. This is safe to use as long as the object is only used from a single thread and no other hashes are created while operating on this one. If this constraint cannot be met, you can use `new` to create a new state object. For example:
+### gensync.race(iterable)
 
-```javascript
-// Use the cached object, calling the function again will return the same
-// object (but reset, so the current state would be lost)
-hashState = MurmurHash3();
-...
+`Promise.race`-like combinator that works with an iterable of generator objects
+that could be passed to `yield*` within a gensync generator.
 
-// Create a new object that can be safely used however you wish. Calling the
-// function again will simply return a new state object, and no state loss
-// will occur, at the cost of creating more objects.
-hashState = new MurmurHash3();
+#### Example
+
+```js
+const loadFiles = gensync(function* () {
+  return yield* gensync.race([
+    readFile("./one.js"),
+    readFile("./two.js"),
+    readFile("./three.js"),
+  ]);
+});
 ```
-
-Both methods can be mixed however you like if you have different use cases.
-
----
-
-### MurmurHash3.prototype.hash (string)
-Incrementally add _string_ to the hash. This can be called as many times as you want for the hash state object, including after a call to `result()`. Returns `this` so calls can be chained.
-
----
-
-### MurmurHash3.prototype.result ()
-Get the result of the hash as a 32-bit positive integer. This performs the tail and finalizer portions of the algorithm, but does not store the result in the state object. This means that it is perfectly safe to get results and then continue adding strings via `hash`.
-
-```javascript
-// Do the whole string at once
-MurmurHash3('this is a test string').result();
-// 0x70529328
-
-// Do part of the string, get a result, then the other part
-var m = MurmurHash3('this is a');
-m.result();
-// 0xbfc4f834
-m.hash(' test string').result();
-// 0x70529328 (same as above)
-```
-
----
-
-### MurmurHash3.prototype.reset ([seed])
-Reset the state object for reuse, optionally using the given _seed_ (defaults to 0 like the constructor). Returns `this` so calls can be chained.
-
----
-
-License (MIT)
--------------
-Copyright (c) 2013 Gary Court, Jens Taylor
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
