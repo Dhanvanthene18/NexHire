@@ -1,30 +1,72 @@
 {
-  "name": "js-tokens",
-  "version": "4.0.0",
-  "author": "Simon Lydell",
-  "license": "MIT",
-  "description": "A regex that tokenizes JavaScript.",
-  "keywords": [
-    "JavaScript",
-    "js",
-    "token",
-    "tokenize",
-    "regex"
-  ],
+  "name": "json5",
+  "version": "2.2.3",
+  "description": "JSON for Humans",
+  "main": "lib/index.js",
+  "module": "dist/index.mjs",
+  "bin": "lib/cli.js",
+  "browser": "dist/index.js",
+  "types": "lib/index.d.ts",
   "files": [
-    "index.js"
+    "lib/",
+    "dist/"
   ],
-  "repository": "lydell/js-tokens",
-  "scripts": {
-    "test": "mocha --ui tdd",
-    "esprima-compare": "node esprima-compare ./index.js everything.js/es5.js",
-    "build": "node generate-index.js",
-    "dev": "npm run build && npm test"
+  "engines": {
+    "node": ">=6"
   },
+  "scripts": {
+    "build": "rollup -c",
+    "build-package": "node build/package.js",
+    "build-unicode": "node build/unicode.js",
+    "coverage": "tap --coverage-report html test",
+    "lint": "eslint --fix .",
+    "lint-report": "eslint .",
+    "prepublishOnly": "npm run production",
+    "preversion": "npm run production",
+    "production": "run-s test build",
+    "tap": "tap -Rspec --100 test",
+    "test": "run-s lint-report tap",
+    "version": "npm run build-package && git add package.json5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/json5/json5.git"
+  },
+  "keywords": [
+    "json",
+    "json5",
+    "es5",
+    "es2015",
+    "ecmascript"
+  ],
+  "author": "Aseem Kishore <aseem.kishore@gmail.com>",
+  "contributors": [
+    "Max Nanasy <max.nanasy@gmail.com>",
+    "Andrew Eisenberg <andrew@eisenberg.as>",
+    "Jordan Tucker <jordanbtucker@gmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/json5/json5/issues"
+  },
+  "homepage": "http://json5.org/",
   "devDependencies": {
-    "coffeescript": "2.1.1",
-    "esprima": "4.0.0",
-    "everything.js": "1.0.3",
-    "mocha": "5.0.0"
+    "core-js": "^2.6.5",
+    "eslint": "^5.15.3",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "npm-run-all": "^4.1.5",
+    "regenerate": "^1.4.0",
+    "rollup": "^0.64.1",
+    "rollup-plugin-buble": "^0.19.6",
+    "rollup-plugin-commonjs": "^9.2.1",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-terser": "^1.0.1",
+    "sinon": "^6.3.5",
+    "tap": "^12.6.0",
+    "unicode-10.0.0": "^0.7.5"
   }
 }
