@@ -1,166 +1,151 @@
-# Changes
+### Version 4.0.0 (2018-01-28) ###
 
+- Added: Support for ES2018. The only change needed was recognizing the `s`
+  regex flag.
+- Changed: _All_ tokens returned by the `matchToToken` function now have a
+  `closed` property. It is set to `undefined` for the tokens where “closed”
+  doesn’t make sense. This means that all tokens objects have the same shape,
+  which might improve performance.
 
-## 2.0.2
+These are the breaking changes:
 
-* Rename bin to `node-which`
+- `'/a/s'.match(jsTokens)` no longer returns `['/', 'a', '/', 's']`, but
+  `['/a/s']`. (There are of course other variations of this.)
+- Code that rely on some token objects not having the `closed` property could
+  now behave differently.
 
-## 2.0.1
 
-* generate changelog and publish on version bump
-* enforce 100% test coverage
-* Promise interface
+### Version 3.0.2 (2017-06-28) ###
 
-## 2.0.0
+- No code changes. Just updates to the readme.
 
-* Parallel tests, modern JavaScript, and drop support for node < 8
 
-## 1.3.1
+### Version 3.0.1 (2017-01-30) ###
 
-* update deps
-* update travis
+- Fixed: ES2015 unicode escapes with more than 6 hex digits are now matched
+  correctly.
 
-## v1.3.0
 
-* Add nothrow option to which.sync
-* update tap
+### Version 3.0.0 (2017-01-11) ###
 
-## v1.2.14
+This release contains one breaking change, that should [improve performance in
+V8][v8-perf]:
 
-* appveyor: drop node 5 and 0.x
-* travis-ci: add node 6, drop 0.x
+> So how can you, as a JavaScript developer, ensure that your RegExps are fast?
+> If you are not interested in hooking into RegExp internals, make sure that
+> neither the RegExp instance, nor its prototype is modified in order to get the
+> best performance:
+>
+> ```js
+> var re = /./g;
+> re.exec('');  // Fast path.
+> re.new_property = 'slow';
+> ```
 
-## v1.2.13
+This module used to export a single regex, with `.matchToToken` bolted
+on, just like in the above example. This release changes the exports of
+the module to avoid this issue.
 
-* test: Pass missing option to pass on windows
-* update tap
-* update isexe to 2.0.0
-* neveragain.tech pledge request
+Before:
 
-## v1.2.12
+```js
+import jsTokens from "js-tokens"
+// or:
+var jsTokens = require("js-tokens")
+var matchToToken = jsTokens.matchToToken
+```
 
-* Removed unused require
+After:
 
-## v1.2.11
+```js
+import jsTokens, {matchToToken} from "js-tokens"
+// or:
+var jsTokens = require("js-tokens").default
+var matchToToken = require("js-tokens").matchToToken
+```
 
-* Prevent changelog script from being included in package
+[v8-perf]: http://v8project.blogspot.se/2017/01/speeding-up-v8-regular-expressions.html
 
-## v1.2.10
 
-* Use env.PATH only, not env.Path
+### Version 2.0.0 (2016-06-19) ###
 
-## v1.2.9
+- Added: Support for ES2016. In other words, support for the `**` exponentiation
+  operator.
 
-* fix for paths starting with ../
-* Remove unused `is-absolute` module
+These are the breaking changes:
 
-## v1.2.8
+- `'**'.match(jsTokens)` no longer returns `['*', '*']`, but `['**']`.
+- `'**='.match(jsTokens)` no longer returns `['*', '*=']`, but `['**=']`.
 
-* bullet items in changelog that contain (but don't start with) #
 
-## v1.2.7
+### Version 1.0.3 (2016-03-27) ###
 
-* strip 'update changelog' changelog entries out of changelog
+- Improved: Made the regex ever so slightly smaller.
+- Updated: The readme.
 
-## v1.2.6
 
-* make the changelog bulleted
+### Version 1.0.2 (2015-10-18) ###
 
-## v1.2.5
+- Improved: Limited npm package contents for a smaller download. Thanks to
+  @zertosh!
 
-* make a changelog, and keep it up to date
-* don't include tests in package
-* Properly handle relative-path executables
-* appveyor
-* Attach error code to Not Found error
-* Make tests pass on Windows
 
-## v1.2.4
+### Version 1.0.1 (2015-06-20) ###
 
-* Fix typo
+- Fixed: Declared an undeclared variable.
 
-## v1.2.3
 
-* update isexe, fix regression in pathExt handling
+### Version 1.0.0 (2015-02-26) ###
 
-## v1.2.2
+- Changed: Merged the 'operator' and 'punctuation' types into 'punctuator'. That
+  type is now equivalent to the Punctuator token in the ECMAScript
+  specification. (Backwards-incompatible change.)
+- Fixed: A `-` followed by a number is now correctly matched as a punctuator
+  followed by a number. It used to be matched as just a number, but there is no
+  such thing as negative number literals. (Possibly backwards-incompatible
+  change.)
 
-* update deps, use isexe module, test windows
 
-## v1.2.1
+### Version 0.4.1 (2015-02-21) ###
 
-* Sometimes windows PATH entries are quoted
-* Fixed a bug in the check for group and user mode bits. This bug was introduced during refactoring for supporting strict mode.
-* doc cli
+- Added: Support for the regex `u` flag.
 
-## v1.2.0
 
-* Add support for opt.all and -as cli flags
-* test the bin
-* update travis
-* Allow checking for multiple programs in bin/which
-* tap 2
+### Version 0.4.0 (2015-02-21) ###
 
-## v1.1.2
+- Improved: `jsTokens.matchToToken` performance.
+- Added: Support for octal and binary number literals.
+- Added: Support for template strings.
 
-* travis
-* Refactored and fixed undefined error on Windows
-* Support strict mode
 
-## v1.1.1
+### Version 0.3.1 (2015-01-06) ###
 
-* test +g exes against secondary groups, if available
-* Use windows exe semantics on cygwin & msys
-* cwd should be first in path on win32, not last
-* Handle lower-case 'env.Path' on Windows
-* Update docs
-* use single-quotes
+- Fixed: Support for unicode spaces. They used to be allowed in names (which is
+  very confusing), and some unicode newlines were wrongly allowed in strings and
+  regexes.
 
-## v1.1.0
 
-* Add tests, depend on is-absolute
+### Version 0.3.0 (2014-12-19) ###
 
-## v1.0.9
+- Changed: The `jsTokens.names` array has been replaced with the
+  `jsTokens.matchToToken` function. The capturing groups of `jsTokens` are no
+  longer part of the public API; instead use said function. See this [gist] for
+  an example. (Backwards-incompatible change.)
+- Changed: The empty string is now considered an “invalid” token, instead an
+  “empty” token (its own group). (Backwards-incompatible change.)
+- Removed: component support. (Backwards-incompatible change.)
 
-* which.js: root is allowed to execute files owned by anyone
+[gist]: https://gist.github.com/lydell/be49dbf80c382c473004
 
-## v1.0.8
 
-* don't use graceful-fs
+### Version 0.2.0 (2014-06-19) ###
 
-## v1.0.7
+- Changed: Match ES6 function arrows (`=>`) as an operator, instead of its own
+  category (“functionArrow”), for simplicity. (Backwards-incompatible change.)
+- Added: ES6 splats (`...`) are now matched as an operator (instead of three
+  punctuations). (Backwards-incompatible change.)
 
-* add license to package.json
 
-## v1.0.6
+### Version 0.1.0 (2014-03-08) ###
 
-* isc license
-
-## 1.0.5
-
-* Awful typo
-
-## 1.0.4
-
-* Test for path absoluteness properly
-* win: Allow '' as a pathext if cmd has a . in it
-
-## 1.0.3
-
-* Remove references to execPath
-* Make `which.sync()` work on Windows by honoring the PATHEXT variable.
-* Make `isExe()` always return true on Windows.
-* MIT
-
-## 1.0.2
-
-* Only files can be exes
-
-## 1.0.1
-
-* Respect the PATHEXT env for win32 support
-* should 0755 the bin
-* binary
-* guts
-* package
-* 1st
+- Initial release.

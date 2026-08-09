@@ -1,42 +1,30 @@
 {
-  "name": "natural-compare",
-  "version": "1.4.0",
-  "stability": 3,
-  "author": "Lauri Rooden (https://github.com/litejs/natural-compare-lite)",
+  "name": "js-tokens",
+  "version": "4.0.0",
+  "author": "Simon Lydell",
   "license": "MIT",
-  "description": "Compare strings containing a mix of letters and numbers in the way a human being would in sort order.",
+  "description": "A regex that tokenizes JavaScript.",
   "keywords": [
-    "string",
-    "natural",
-    "order",
-    "sort",
-    "natsort",
-    "natcmp",
-    "compare",
-    "alphanum",
-    "litejs"
+    "JavaScript",
+    "js",
+    "token",
+    "tokenize",
+    "regex"
   ],
-  "main": "index.js",
-  "readmeFilename": "README.md",
   "files": [
     "index.js"
   ],
+  "repository": "lydell/js-tokens",
   "scripts": {
-    "build": "node node_modules/buildman/index.js --all",
-    "test": "node tests/index.js"
-  },
-  "repository": "git://github.com/litejs/natural-compare-lite.git",
-  "bugs": {
-    "url": "https://github.com/litejs/natural-compare-lite/issues"
+    "test": "mocha --ui tdd",
+    "esprima-compare": "node esprima-compare ./index.js everything.js/es5.js",
+    "build": "node generate-index.js",
+    "dev": "npm run build && npm test"
   },
   "devDependencies": {
-    "buildman": "*",
-    "testman": "*"
-  },
-  "buildman": {
-    "dist/index-min.js": {
-      "banner": "/*! litejs.com/MIT-LICENSE.txt */",
-      "input": "index.js"
-    }
+    "coffeescript": "2.1.1",
+    "esprima": "4.0.0",
+    "everything.js": "1.0.3",
+    "mocha": "5.0.0"
   }
 }
