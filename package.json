@@ -1,117 +1,68 @@
 {
-  "name": "react-dom",
-  "version": "19.2.8",
-  "description": "React package for working with the DOM.",
-  "main": "index.js",
+  "name": "balanced-match",
+  "description": "Match balanced character pairs, like \"{\" and \"}\"",
+  "version": "4.0.4",
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/react/react.git",
-    "directory": "packages/react-dom"
+    "url": "git://github.com/juliangruber/balanced-match.git"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/commonjs/index.d.ts",
+        "default": "./dist/commonjs/index.js"
+      }
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "preversion": "npm test",
+    "postversion": "npm publish",
+    "prepublishOnly": "git push origin --follow-tags",
+    "prepare": "tshy",
+    "pretest": "npm run prepare",
+    "presnap": "npm run prepare",
+    "test": "tap",
+    "snap": "tap",
+    "format": "prettier --write .",
+    "benchmark": "node benchmark/index.js",
+    "typedoc": "typedoc --tsconfig .tshy/esm.json ./src/*.ts"
+  },
+  "devDependencies": {
+    "@types/brace-expansion": "^1.1.2",
+    "@types/node": "^25.2.1",
+    "mkdirp": "^3.0.1",
+    "prettier": "^3.3.2",
+    "tap": "^21.6.2",
+    "tshy": "^3.0.2",
+    "typedoc": "^0.28.5"
   },
   "keywords": [
-    "react"
+    "match",
+    "regexp",
+    "test",
+    "balanced",
+    "parse"
   ],
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/react/react/issues"
+  "engines": {
+    "node": "18 || 20 || >=22"
   },
-  "homepage": "https://react.dev/",
-  "dependencies": {
-    "scheduler": "^0.27.0"
+  "tshy": {
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./src/index.ts"
+    }
   },
-  "peerDependencies": {
-    "react": "^19.2.8"
-  },
-  "files": [
-    "LICENSE",
-    "README.md",
-    "client.js",
-    "client.react-server.js",
-    "index.js",
-    "profiling.js",
-    "profiling.react-server.js",
-    "react-dom.react-server.js",
-    "server.browser.js",
-    "server.bun.js",
-    "server.edge.js",
-    "server.js",
-    "server.node.js",
-    "server.react-server.js",
-    "static.browser.js",
-    "static.edge.js",
-    "static.js",
-    "static.node.js",
-    "static.react-server.js",
-    "test-utils.js",
-    "cjs/"
-  ],
-  "exports": {
-    ".": {
-      "react-server": "./react-dom.react-server.js",
-      "default": "./index.js"
-    },
-    "./client": {
-      "react-server": "./client.react-server.js",
-      "default": "./client.js"
-    },
-    "./server": {
-      "react-server": "./server.react-server.js",
-      "workerd": "./server.edge.js",
-      "bun": "./server.bun.js",
-      "deno": "./server.browser.js",
-      "worker": "./server.browser.js",
-      "node": "./server.node.js",
-      "edge-light": "./server.edge.js",
-      "browser": "./server.browser.js",
-      "default": "./server.node.js"
-    },
-    "./server.browser": {
-      "react-server": "./server.react-server.js",
-      "default": "./server.browser.js"
-    },
-    "./server.bun": {
-      "react-server": "./server.react-server.js",
-      "default": "./server.bun.js"
-    },
-    "./server.edge": {
-      "react-server": "./server.react-server.js",
-      "default": "./server.edge.js"
-    },
-    "./server.node": {
-      "react-server": "./server.react-server.js",
-      "default": "./server.node.js"
-    },
-    "./static": {
-      "react-server": "./static.react-server.js",
-      "workerd": "./static.edge.js",
-      "deno": "./static.browser.js",
-      "worker": "./static.browser.js",
-      "node": "./static.node.js",
-      "edge-light": "./static.edge.js",
-      "browser": "./static.browser.js",
-      "default": "./static.node.js"
-    },
-    "./static.browser": {
-      "react-server": "./static.react-server.js",
-      "default": "./static.browser.js"
-    },
-    "./static.edge": {
-      "react-server": "./static.react-server.js",
-      "default": "./static.edge.js"
-    },
-    "./static.node": {
-      "react-server": "./static.react-server.js",
-      "default": "./static.node.js"
-    },
-    "./profiling": {
-      "react-server": "./profiling.react-server.js",
-      "default": "./profiling.js"
-    },
-    "./test-utils": "./test-utils.js",
-    "./package.json": "./package.json"
-  },
-  "browser": {
-    "./server.js": "./server.browser.js",
-    "./static.js": "./static.browser.js"
-  }
+  "main": "./dist/commonjs/index.js",
+  "types": "./dist/commonjs/index.d.ts",
+  "module": "./dist/esm/index.js"
 }
