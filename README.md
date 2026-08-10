@@ -1,261 +1,174 @@
-[![npm version](https://img.shields.io/npm/v/espree.svg)](https://www.npmjs.com/package/espree)
-[![npm downloads](https://img.shields.io/npm/dm/espree.svg)](https://www.npmjs.com/package/espree)
-[![Build Status](https://github.com/eslint/js/workflows/CI/badge.svg)](https://github.com/js/espree/actions)
-[![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=9348450)](https://www.bountysource.com/trackers/9348450-eslint?utm_source=9348450&utm_medium=shield&utm_campaign=TRACKER_BADGE)
+### esutils [![Build Status](https://secure.travis-ci.org/estools/esutils.svg)](http://travis-ci.org/estools/esutils)
+esutils ([esutils](http://github.com/estools/esutils)) is
+utility box for ECMAScript language tools.
 
-# Espree
+### API
 
-Espree started out as a fork of [Esprima](http://esprima.org) v1.2.2, the last stable published released of Esprima before work on ECMAScript 6 began. Espree is now built on top of [Acorn](https://github.com/ternjs/acorn), which has a modular architecture that allows extension of core functionality. The goal of Espree is to produce output that is similar to Esprima with a similar API so that it can be used in place of Esprima.
+### ast
 
-## Usage
+#### ast.isExpression(node)
 
-Install:
+Returns true if `node` is an Expression as defined in ECMA262 edition 5.1 section
+[11](https://es5.github.io/#x11).
 
-```
-npm i espree
-```
+#### ast.isStatement(node)
 
-To use in an ESM file:
+Returns true if `node` is a Statement as defined in ECMA262 edition 5.1 section
+[12](https://es5.github.io/#x12).
 
+#### ast.isIterationStatement(node)
+
+Returns true if `node` is an IterationStatement as defined in ECMA262 edition
+5.1 section [12.6](https://es5.github.io/#x12.6).
+
+#### ast.isSourceElement(node)
+
+Returns true if `node` is a SourceElement as defined in ECMA262 edition 5.1
+section [14](https://es5.github.io/#x14).
+
+#### ast.trailingStatement(node)
+
+Returns `Statement?` if `node` has trailing `Statement`.
 ```js
-import * as espree from "espree";
-
-const ast = espree.parse(code);
+if (cond)
+    consequent;
 ```
+When taking this `IfStatement`, returns `consequent;` statement.
 
-To use in a Common JS file:
+#### ast.isProblematicIfStatement(node)
 
+Returns true if `node` is a problematic IfStatement. If `node` is a problematic `IfStatement`, `node` cannot be represented as an one on one JavaScript code.
 ```js
-const espree = require("espree");
-
-const ast = espree.parse(code);
-```
-
-## API
-
-### `parse()`
-
-`parse` parses the given code and returns a abstract syntax tree (AST). It takes two parameters.
-
-- `code` [string]() - the code which needs to be parsed.
-- `options (Optional)` [Object]() - read more about this [here](#options).
-
-```js
-import * as espree from "espree";
-
-const ast = espree.parse(code);
-```
-
-**Example :**
-
-```js
-const ast = espree.parse('let foo = "bar"', { ecmaVersion: 6 });
-console.log(ast);
-```
-
-<details><summary>Output</summary>
-<p>
-
-```
-Node {
-  type: 'Program',
-  start: 0,
-  end: 15,
-  body: [
-    Node {
-      type: 'VariableDeclaration',
-      start: 0,
-      end: 15,
-      declarations: [Array],
-      kind: 'let'
-    }
-  ],
-  sourceType: 'script'
+{
+    type: 'IfStatement',
+    consequent: {
+        type: 'WithStatement',
+        body: {
+            type: 'IfStatement',
+            consequent: {type: 'EmptyStatement'}
+        }
+    },
+    alternate: {type: 'EmptyStatement'}
 }
 ```
+The above node cannot be represented as a JavaScript code, since the top level `else` alternate belongs to an inner `IfStatement`.
 
-</p>
-</details>
 
-### `tokenize()`
+### code
 
-`tokenize` returns the tokens of a given code. It takes two parameters.
+#### code.isDecimalDigit(code)
 
-- `code` [string]() - the code which needs to be parsed.
-- `options (Optional)` [Object]() - read more about this [here](#options).
+Return true if provided code is decimal digit.
 
-Even if `options` is empty or undefined or `options.tokens` is `false`, it assigns it to `true` in order to get the `tokens` array
+#### code.isHexDigit(code)
 
-**Example :**
+Return true if provided code is hexadecimal digit.
 
-```js
-import * as espree from "espree";
+#### code.isOctalDigit(code)
 
-const tokens = espree.tokenize('let foo = "bar"', { ecmaVersion: 6 });
-console.log(tokens);
-```
+Return true if provided code is octal digit.
 
-<details><summary>Output</summary>
-<p>
+#### code.isWhiteSpace(code)
 
-```
-Token { type: 'Keyword', value: 'let', start: 0, end: 3 },
-Token { type: 'Identifier', value: 'foo', start: 4, end: 7 },
-Token { type: 'Punctuator', value: '=', start: 8, end: 9 },
-Token { type: 'String', value: '"bar"', start: 10, end: 15 }
-```
+Return true if provided code is white space. White space characters are formally defined in ECMA262.
 
-</p>
-</details>
+#### code.isLineTerminator(code)
 
-### `version`
+Return true if provided code is line terminator. Line terminator characters are formally defined in ECMA262.
 
-Returns the current `espree` version
+#### code.isIdentifierStart(code)
 
-### `VisitorKeys`
+Return true if provided code can be the first character of ECMA262 Identifier. They are formally defined in ECMA262.
 
-Returns all visitor keys for traversing the AST from [eslint-visitor-keys](https://github.com/eslint/js/tree/main/packages/eslint-visitor-keys)
+#### code.isIdentifierPart(code)
 
-### `latestEcmaVersion`
+Return true if provided code can be the trailing character of ECMA262 Identifier. They are formally defined in ECMA262.
 
-Returns the latest ECMAScript supported by `espree`
+### keyword
 
-### `supportedEcmaVersions`
+#### keyword.isKeywordES5(id, strict)
 
-Returns an array of all supported ECMAScript versions
+Returns `true` if provided identifier string is a Keyword or Future Reserved Word
+in ECMA262 edition 5.1. They are formally defined in ECMA262 sections
+[7.6.1.1](http://es5.github.io/#x7.6.1.1) and [7.6.1.2](http://es5.github.io/#x7.6.1.2),
+respectively. If the `strict` flag is truthy, this function additionally checks whether
+`id` is a Keyword or Future Reserved Word under strict mode.
 
-## Options
+#### keyword.isKeywordES6(id, strict)
 
-```js
-const options = {
-	// attach range information to each node
-	range: false,
+Returns `true` if provided identifier string is a Keyword or Future Reserved Word
+in ECMA262 edition 6. They are formally defined in ECMA262 sections
+[11.6.2.1](http://ecma-international.org/ecma-262/6.0/#sec-keywords) and
+[11.6.2.2](http://ecma-international.org/ecma-262/6.0/#sec-future-reserved-words),
+respectively. If the `strict` flag is truthy, this function additionally checks whether
+`id` is a Keyword or Future Reserved Word under strict mode.
 
-	// attach line/column location information to each node
-	loc: false,
+#### keyword.isReservedWordES5(id, strict)
 
-	// create a top-level comments array containing all comments
-	comment: false,
+Returns `true` if provided identifier string is a Reserved Word in ECMA262 edition 5.1.
+They are formally defined in ECMA262 section [7.6.1](http://es5.github.io/#x7.6.1).
+If the `strict` flag is truthy, this function additionally checks whether `id`
+is a Reserved Word under strict mode.
 
-	// create a top-level tokens array containing all tokens
-	tokens: false,
+#### keyword.isReservedWordES6(id, strict)
 
-	// Set to 3, 5 (the default), 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 or 17 to specify the version of ECMAScript syntax you want to use.
-	// You can also set to 2015 (same as 6), 2016 (same as 7), 2017 (same as 8), 2018 (same as 9), 2019 (same as 10), 2020 (same as 11), 2021 (same as 12), 2022 (same as 13), 2023 (same as 14), 2024 (same as 15), 2025 (same as 16) or 2026 (same as 17) to use the year-based naming.
-	// You can also set "latest" to use the most recently supported version.
-	ecmaVersion: 3,
+Returns `true` if provided identifier string is a Reserved Word in ECMA262 edition 6.
+They are formally defined in ECMA262 section [11.6.2](http://ecma-international.org/ecma-262/6.0/#sec-reserved-words).
+If the `strict` flag is truthy, this function additionally checks whether `id`
+is a Reserved Word under strict mode.
 
-	allowReserved: true, // only allowed when ecmaVersion is 3
+#### keyword.isRestrictedWord(id)
 
-	// specify which type of script you're parsing ("script", "module", or "commonjs")
-	sourceType: "script",
+Returns `true` if provided identifier string is one of `eval` or `arguments`.
+They are restricted in strict mode code throughout ECMA262 edition 5.1 and
+in ECMA262 edition 6 section [12.1.1](http://ecma-international.org/ecma-262/6.0/#sec-identifiers-static-semantics-early-errors).
 
-	// specify additional language features
-	ecmaFeatures: {
-		// enable JSX parsing
-		jsx: false,
+#### keyword.isIdentifierNameES5(id)
 
-		// enable return in global scope (set to true automatically when sourceType is "commonjs")
-		globalReturn: false,
+Return true if provided identifier string is an IdentifierName as specified in
+ECMA262 edition 5.1 section [7.6](https://es5.github.io/#x7.6).
 
-		// enable implied strict mode (if ecmaVersion >= 5)
-		impliedStrict: false,
-	},
-};
-```
+#### keyword.isIdentifierNameES6(id)
 
-## Esprima Compatibility Going Forward
+Return true if provided identifier string is an IdentifierName as specified in
+ECMA262 edition 6 section [11.6](http://ecma-international.org/ecma-262/6.0/#sec-names-and-keywords).
 
-The primary goal is to produce the exact same AST structure and tokens as Esprima, and that takes precedence over anything else. (The AST structure being the [ESTree](https://github.com/estree/estree) API with JSX extensions.) Separate from that, Espree may deviate from what Esprima outputs in terms of where and how comments are attached, as well as what additional information is available on AST nodes. That is to say, Espree may add more things to the AST nodes than Esprima does but the overall AST structure produced will be the same.
+#### keyword.isIdentifierES5(id, strict)
 
-Espree may also deviate from Esprima in the interface it exposes.
+Return true if provided identifier string is an Identifier as specified in
+ECMA262 edition 5.1 section [7.6](https://es5.github.io/#x7.6). If the `strict`
+flag is truthy, this function additionally checks whether `id` is an Identifier
+under strict mode.
 
-## Contributing
+#### keyword.isIdentifierES6(id, strict)
 
-Issues and pull requests will be triaged and responded to as quickly as possible. We operate under the [ESLint Contributor Guidelines](http://eslint.org/docs/developer-guide/contributing), so please be sure to read them before contributing. If you're not sure where to dig in, check out the [issues](https://github.com/eslint/js/issues).
+Return true if provided identifier string is an Identifier as specified in
+ECMA262 edition 6 section [12.1](http://ecma-international.org/ecma-262/6.0/#sec-identifiers).
+If the `strict` flag is truthy, this function additionally checks whether `id`
+is an Identifier under strict mode.
 
-Espree is licensed under a permissive BSD 2-clause license.
+### License
 
-## Security Policy
+Copyright (C) 2013 [Yusuke Suzuki](http://github.com/Constellation)
+ (twitter: [@Constellation](http://twitter.com/Constellation)) and other contributors.
 
-We work hard to ensure that Espree is safe for everyone and that security issues are addressed quickly and responsibly. Read the full [security policy](https://github.com/eslint/.github/blob/master/SECURITY.md).
-
-## Build Commands
-
-- `npm test` - run all tests
-- `npm run lint` - run all linting
-
-## Differences from Espree 2.x
-
-- The `tokenize()` method does not use `ecmaFeatures`. Any string will be tokenized completely based on ECMAScript 6 semantics.
-- Trailing whitespace no longer is counted as part of a node.
-- `let` and `const` declarations are no longer parsed by default. You must opt-in by using an `ecmaVersion` newer than `5` or setting `sourceType` to `module`.
-- The `esparse` and `esvalidate` binary scripts have been removed.
-- There is no `tolerant` option. We will investigate adding this back in the future.
-
-## Known Incompatibilities
-
-In an effort to help those wanting to transition from other parsers to Espree, the following is a list of noteworthy incompatibilities with other parsers. These are known differences that we do not intend to change.
-
-### Esprima 1.2.2
-
-- Esprima counts trailing whitespace as part of each AST node while Espree does not. In Espree, the end of a node is where the last token occurs.
-- Espree does not parse `let` and `const` declarations by default.
-- Error messages returned for parsing errors are different.
-- There are two addition properties on every node and token: `start` and `end`. These represent the same data as `range` and are used internally by Acorn.
-
-### Esprima 2.x
-
-- Esprima 2.x uses a different comment attachment algorithm that results in some comments being added in different places than Espree. The algorithm Espree uses is the same one used in Esprima 1.2.2.
-
-## Frequently Asked Questions
-
-### Why another parser
-
-[ESLint](http://eslint.org) had been relying on Esprima as its parser from the beginning. While that was fine when the JavaScript language was evolving slowly, the pace of development increased dramatically and Esprima had fallen behind. ESLint, like many other tools reliant on Esprima, has been stuck in using new JavaScript language features until Esprima updates, and that caused our users frustration.
-
-We decided the only way for us to move forward was to create our own parser, bringing us inline with JSHint and JSLint, and allowing us to keep implementing new features as we need them. We chose to fork Esprima instead of starting from scratch in order to move as quickly as possible with a compatible API.
-
-With Espree 2.0.0, we are no longer a fork of Esprima but rather a translation layer between Acorn and Esprima syntax. This allows us to put work back into a community-supported parser (Acorn) that is continuing to grow and evolve while maintaining an Esprima-compatible parser for those utilities still built on Esprima.
-
-### Have you tried working with Esprima?
-
-Yes. Since the start of ESLint, we've regularly filed bugs and feature requests with Esprima and will continue to do so. However, there are some different philosophies around how the projects work that need to be worked through. The initial goal was to have Espree track Esprima and eventually merge the two back together, but we ultimately decided that building on top of Acorn was a better choice due to Acorn's plugin support.
-
-### Why don't you just use Acorn?
-
-Acorn is a great JavaScript parser that produces an AST that is compatible with Esprima. Unfortunately, ESLint relies on more than just the AST to do its job. It relies on Esprima's tokens and comment attachment features to get a complete picture of the source code. We investigated switching to Acorn, but the inconsistencies between Esprima and Acorn created too much work for a project like ESLint.
-
-We are building on top of Acorn, however, so that we can contribute back and help make Acorn even better.
-
-### What ECMAScript features do you support?
-
-Espree supports all ECMAScript 2025 features and partially supports ECMAScript 2026 features.
-
-Because ECMAScript 2026 is still under development, we are implementing features as they are finalized. Currently, Espree supports:
-
-- [Explicit Resource Management](https://github.com/tc39/proposal-explicit-resource-management)
-
-See [finished-proposals.md](https://github.com/tc39/proposals/blob/master/finished-proposals.md) to know what features are finalized.
-
-### How do you determine which experimental features to support?
-
-In general, we do not support experimental JavaScript features. We may make exceptions from time to time depending on the maturity of the features.
-
-<!-- NOTE: This section is autogenerated. Do not manually edit.-->
-<!--sponsorsstart-->
-
-## Sponsors
-
-The following companies, organizations, and individuals support ESLint's ongoing maintenance and development. [Become a Sponsor](https://eslint.org/donate)
-to get your logo on our READMEs and [website](https://eslint.org/sponsors).
-
-<h3>Platinum Sponsors</h3>
-<p><a href="https://automattic.com"><img src="https://images.opencollective.com/automattic/d0ef3e1/logo.png" alt="Automattic" height="128"></a></p><h3>Gold Sponsors</h3>
-<p><a href="https://qlty.sh/"><img src="https://images.opencollective.com/qltysh/33d157d/logo.png" alt="Qlty Software" height="96"></a></p><h3>Silver Sponsors</h3>
-<p><a href="https://vite.dev/"><img src="https://images.opencollective.com/vite/d472863/logo.png" alt="Vite" height="64"></a> <a href="https://liftoff.io/"><img src="https://images.opencollective.com/liftoff/2d6c3b6/logo.png" alt="Liftoff" height="64"></a> <a href="https://stackblitz.com"><img src="https://avatars.githubusercontent.com/u/28635252" alt="StackBlitz" height="64"></a></p><h3>Bronze Sponsors</h3>
-<p><a href="https://cybozu.co.jp/"><img src="https://images.opencollective.com/cybozu/933e46d/logo.png" alt="Cybozu" height="32"></a> <a href="https://opensource.sap.com"><img src="https://avatars.githubusercontent.com/u/2531208" alt="SAP" height="32"></a> <a href="https://www.crawljobs.com/"><img src="https://images.opencollective.com/crawljobs-poland/fa43a17/logo.png" alt="CrawlJobs" height="32"></a> <a href="https://depot.dev"><img src="https://images.opencollective.com/depot/39125a1/logo.png" alt="Depot" height="32"></a> <a href="https://www.n-ix.com/"><img src="https://images.opencollective.com/n-ix-ltd/575a7a5/logo.png" alt="N-iX Ltd" height="32"></a> <a href="https://icons8.com/"><img src="https://images.opencollective.com/icons8/7fa1641/logo.png" alt="Icons8" height="32"></a> <a href="https://discord.com"><img src="https://images.opencollective.com/discordapp/f9645d9/logo.png" alt="Discord" height="32"></a> <a href="https://www.gitbook.com"><img src="https://avatars.githubusercontent.com/u/7111340" alt="GitBook" height="32"></a> <a href="https://herocoders.com"><img src="https://avatars.githubusercontent.com/u/37549774" alt="HeroCoders" height="32"></a> <a href="https://www.lambdatest.com"><img src="https://avatars.githubusercontent.com/u/171592363" alt="TestMu AI Open Source Office (Formerly LambdaTest)" height="32"></a></p>
-<h3>Technology Sponsors</h3>
-Technology sponsors allow us to use their products and services for free as part of a contribution to the open source ecosystem and our work.
-<p><a href="https://netlify.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/netlify-icon.svg" alt="Netlify" height="32"></a> <a href="https://algolia.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/algolia-icon.svg" alt="Algolia" height="32"></a> <a href="https://1password.com"><img src="https://raw.githubusercontent.com/eslint/eslint.org/main/src/assets/images/techsponsors/1password-icon.svg" alt="1Password" height="32"></a></p>
-<!--sponsorsend-->
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
