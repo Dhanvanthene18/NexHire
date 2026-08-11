@@ -1,39 +1,70 @@
 {
-  "name": "type-check",
-  "version": "0.4.0",
-  "author": "George Zahariev <z@georgezahariev.com>",
-  "description": "type-check allows you to check the types of JavaScript values at runtime with a Haskell like type syntax.",
-  "homepage": "https://github.com/gkz/type-check",
-  "keywords": [
-    "type",
-    "check",
-    "checking",
-    "library"
-  ],
-  "files": [
-    "lib",
-    "README.md",
-    "LICENSE"
-  ],
-  "main": "./lib/",
-  "bugs": "https://github.com/gkz/type-check/issues",
-  "license": "MIT",
-  "engines": {
-    "node": ">= 0.8.0"
+  "name": "tinyglobby",
+  "version": "0.2.17",
+  "description": "A fast and minimal alternative to globby and fast-glob",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "author": "Superchupu",
+  "license": "MIT",
+  "keywords": [
+    "glob",
+    "patterns",
+    "tiny",
+    "fast"
+  ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/gkz/type-check.git"
+    "url": "git+https://github.com/SuperchupuDev/tinyglobby.git"
   },
-  "scripts": {
-    "test": "make test"
+  "bugs": {
+    "url": "https://github.com/SuperchupuDev/tinyglobby/issues"
+  },
+  "homepage": "https://superchupu.dev/tinyglobby",
+  "funding": {
+    "url": "https://github.com/sponsors/SuperchupuDev"
   },
   "dependencies": {
-    "prelude-ls": "^1.2.1"
+    "fdir": "^6.5.0",
+    "picomatch": "^4.0.4"
   },
   "devDependencies": {
-    "livescript": "^1.6.0",
-    "mocha": "^7.1.1",
-    "browserify": "^16.5.1"
+    "@biomejs/biome": "^2.4.16",
+    "@types/node": "^25.9.1",
+    "@types/picomatch": "^4.0.3",
+    "fast-glob": "^3.3.3",
+    "fs-fixture": "^2.14.0",
+    "glob": "^13.0.6",
+    "tinybench": "^6.0.2",
+    "tsdown": "^0.22.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "scripts": {
+    "bench": "node benchmark/bench.ts",
+    "bench:setup": "node benchmark/setup.ts",
+    "build": "tsdown",
+    "check": "biome check",
+    "check:fix": "biome check --write --unsafe",
+    "format": "biome format --write",
+    "lint": "biome lint",
+    "test": "node --test \"test/**/*.ts\"",
+    "test:coverage": "node --test --experimental-test-coverage \"test/**/*.ts\"",
+    "test:only": "node --test --test-only \"test/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   }
 }
