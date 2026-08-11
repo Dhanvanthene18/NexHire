@@ -1,203 +1,201 @@
-# URI.js
+# word-wrap [![NPM version](https://img.shields.io/npm/v/word-wrap.svg?style=flat)](https://www.npmjs.com/package/word-wrap) [![NPM monthly downloads](https://img.shields.io/npm/dm/word-wrap.svg?style=flat)](https://npmjs.org/package/word-wrap) [![NPM total downloads](https://img.shields.io/npm/dt/word-wrap.svg?style=flat)](https://npmjs.org/package/word-wrap) [![Linux Build Status](https://img.shields.io/travis/jonschlinkert/word-wrap.svg?style=flat&label=Travis)](https://travis-ci.org/jonschlinkert/word-wrap)
 
-URI.js is an [RFC 3986](http://www.ietf.org/rfc/rfc3986.txt) compliant, scheme extendable URI parsing/validating/resolving library for all JavaScript environments (browsers, Node.js, etc).
-It is also compliant with the IRI ([RFC 3987](http://www.ietf.org/rfc/rfc3987.txt)), IDNA ([RFC 5890](http://www.ietf.org/rfc/rfc5890.txt)), IPv6 Address ([RFC 5952](http://www.ietf.org/rfc/rfc5952.txt)), IPv6 Zone Identifier ([RFC 6874](http://www.ietf.org/rfc/rfc6874.txt)) specifications.
+> Wrap words to a specified length.
 
-URI.js has an extensive test suite, and works in all (Node.js, web) environments. It weighs in at 6.4kb (gzipped, 17kb deflated).
+Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
 
-## API
+## Install
 
-### Parsing
+Install with [npm](https://www.npmjs.com/):
 
-	URI.parse("uri://user:pass@example.com:123/one/two.three?q1=a1&q2=a2#body");
-	//returns:
-	//{
-	//  scheme : "uri",
-	//  userinfo : "user:pass",
-	//  host : "example.com",
-	//  port : 123,
-	//  path : "/one/two.three",
-	//  query : "q1=a1&q2=a2",
-	//  fragment : "body"
-	//}
-
-### Serializing
-
-	URI.serialize({scheme : "http", host : "example.com", fragment : "footer"}) === "http://example.com/#footer"
-
-### Resolving
-
-	URI.resolve("uri://a/b/c/d?q", "../../g") === "uri://a/g"
-
-### Normalizing
-
-	URI.normalize("HTTP://ABC.com:80/%7Esmith/home.html") === "http://abc.com/~smith/home.html"
-
-### Comparison
-
-	URI.equal("example://a/b/c/%7Bfoo%7D", "eXAMPLE://a/./b/../b/%63/%7bfoo%7d") === true
-
-### IP Support
-
-	//IPv4 normalization
-	URI.normalize("//192.068.001.000") === "//192.68.1.0"
-
-	//IPv6 normalization
-	URI.normalize("//[2001:0:0DB8::0:0001]") === "//[2001:0:db8::1]"
-
-	//IPv6 zone identifier support
-	URI.parse("//[2001:db8::7%25en1]");
-	//returns:
-	//{
-	//  host : "2001:db8::7%en1"
-	//}
-
-### IRI Support
-
-	//convert IRI to URI
-	URI.serialize(URI.parse("http://examplé.org/rosé")) === "http://xn--exampl-gva.org/ros%C3%A9"
-	//convert URI to IRI
-	URI.serialize(URI.parse("http://xn--exampl-gva.org/ros%C3%A9"), {iri:true}) === "http://examplé.org/rosé"
-
-### Options
-
-All of the above functions can accept an additional options argument that is an object that can contain one or more of the following properties:
-
-*	`scheme` (string)
-
-	Indicates the scheme that the URI should be treated as, overriding the URI's normal scheme parsing behavior.
-
-*	`reference` (string)
-
-	If set to `"suffix"`, it indicates that the URI is in the suffix format, and the validator will use the option's `scheme` property to determine the URI's scheme.
-
-*	`tolerant` (boolean, false)
-
-	If set to `true`, the parser will relax URI resolving rules.
-
-*	`absolutePath` (boolean, false)
-
-	If set to `true`, the serializer will not resolve a relative `path` component.
-
-*	`iri` (boolean, false)
-
-	If set to `true`, the serializer will unescape non-ASCII characters as per [RFC 3987](http://www.ietf.org/rfc/rfc3987.txt).
-
-*	`unicodeSupport` (boolean, false)
-
-	If set to `true`, the parser will unescape non-ASCII characters in the parsed output as per [RFC 3987](http://www.ietf.org/rfc/rfc3987.txt).
-
-*	`domainHost` (boolean, false)
-
-	If set to `true`, the library will treat the `host` component as a domain name, and convert IDNs (International Domain Names) as per [RFC 5891](http://www.ietf.org/rfc/rfc5891.txt).
-
-## Scheme Extendable
-
-URI.js supports inserting custom [scheme](http://en.wikipedia.org/wiki/URI_scheme) dependent processing rules. Currently, URI.js has built in support for the following schemes:
-
-*	http \[[RFC 2616](http://www.ietf.org/rfc/rfc2616.txt)\]
-*	https \[[RFC 2818](http://www.ietf.org/rfc/rfc2818.txt)\]
-*	ws \[[RFC 6455](http://www.ietf.org/rfc/rfc6455.txt)\]
-*	wss \[[RFC 6455](http://www.ietf.org/rfc/rfc6455.txt)\]
-*	mailto \[[RFC 6068](http://www.ietf.org/rfc/rfc6068.txt)\]
-*	urn \[[RFC 2141](http://www.ietf.org/rfc/rfc2141.txt)\]
-*	urn:uuid \[[RFC 4122](http://www.ietf.org/rfc/rfc4122.txt)\]
-
-### HTTP/HTTPS Support
-
-	URI.equal("HTTP://ABC.COM:80", "http://abc.com/") === true
-	URI.equal("https://abc.com", "HTTPS://ABC.COM:443/") === true
-
-### WS/WSS Support
-
-	URI.parse("wss://example.com/foo?bar=baz");
-	//returns:
-	//{
-	//	scheme : "wss",
-	//	host: "example.com",
-	//	resourceName: "/foo?bar=baz",
-	//	secure: true,
-	//}
-
-	URI.equal("WS://ABC.COM:80/chat#one", "ws://abc.com/chat") === true
-
-### Mailto Support
-
-	URI.parse("mailto:alpha@example.com,bravo@example.com?subject=SUBSCRIBE&body=Sign%20me%20up!");
-	//returns:
-	//{
-	//	scheme : "mailto",
-	//	to : ["alpha@example.com", "bravo@example.com"],
-	//	subject : "SUBSCRIBE",
-	//	body : "Sign me up!"
-	//}
-
-	URI.serialize({
-		scheme : "mailto",
-		to : ["alpha@example.com"],
-		subject : "REMOVE",
-		body : "Please remove me",
-		headers : {
-			cc : "charlie@example.com"
-		}
-	}) === "mailto:alpha@example.com?cc=charlie@example.com&subject=REMOVE&body=Please%20remove%20me"
-
-### URN Support
-
-	URI.parse("urn:example:foo");
-	//returns:
-	//{
-	//	scheme : "urn",
-	//	nid : "example",
-	//	nss : "foo",
-	//}
-
-#### URN UUID Support
-
-	URI.parse("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6");
-	//returns:
-	//{
-	//	scheme : "urn",
-	//	nid : "uuid",
-	//	uuid : "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-	//}
+```sh
+$ npm install --save word-wrap
+```
 
 ## Usage
 
-To load in a browser, use the following tag:
+```js
+var wrap = require('word-wrap');
 
-	<script type="text/javascript" src="uri-js/dist/es5/uri.all.min.js"></script>
+wrap('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
+```
 
-To load in a CommonJS/Module environment, first install with npm/yarn by running on the command line:
+Results in:
 
-	npm install uri-js
-	# OR
-	yarn add uri-js
+```
+  Lorem ipsum dolor sit amet, consectetur adipiscing
+  elit, sed do eiusmod tempor incididunt ut labore
+  et dolore magna aliqua. Ut enim ad minim veniam,
+  quis nostrud exercitation ullamco laboris nisi ut
+  aliquip ex ea commodo consequat.
+```
 
-Then, in your code, load it using:
+## Options
 
-	const URI = require("uri-js");
+![image](https://cloud.githubusercontent.com/assets/383994/6543728/7a381c08-c4f6-11e4-8b7d-b6ba197569c9.png)
 
-If you are writing your code in ES6+ (ESNEXT) or TypeScript, you would load it using:
+### options.width
 
-	import * as URI from "uri-js";
+Type: `Number`
 
-Or you can load just what you need using named exports:
+Default: `50`
 
-	import { parse, serialize, resolve, resolveComponents, normalize, equal, removeDotSegments, pctEncChar, pctDecChars, escapeComponent, unescapeComponent } from "uri-js";
+The width of the text before wrapping to a new line.
 
-## Breaking changes
+**Example:**
 
-### Breaking changes from 3.x
+```js
+wrap(str, {width: 60});
+```
 
-URN parsing has been completely changed to better align with the specification. Scheme is now always `urn`, but has two new properties: `nid` which contains the Namspace Identifier, and `nss` which contains the Namespace Specific String. The `nss` property will be removed by higher order scheme handlers, such as the UUID URN scheme handler.
+### options.indent
 
-The UUID of a URN can now be found in the `uuid` property.
+Type: `String`
 
-### Breaking changes from 2.x
+Default: `` (two spaces)
 
-URI validation has been removed as it was slow, exposed a vulnerabilty, and was generally not useful.
+The string to use at the beginning of each line.
 
-### Breaking changes from 1.x
+**Example:**
 
-The `errors` array on parsed components is now an `error` string.
+```js
+wrap(str, {indent: '      '});
+```
+
+### options.newline
+
+Type: `String`
+
+Default: `\n`
+
+The string to use at the end of each line.
+
+**Example:**
+
+```js
+wrap(str, {newline: '\n\n'});
+```
+
+### options.escape
+
+Type: `function`
+
+Default: `function(str){return str;}`
+
+An escape function to run on each line after splitting them.
+
+**Example:**
+
+```js
+var xmlescape = require('xml-escape');
+wrap(str, {
+  escape: function(string){
+    return xmlescape(string);
+  }
+});
+```
+
+### options.trim
+
+Type: `Boolean`
+
+Default: `false`
+
+Trim trailing whitespace from the returned string. This option is included since `.trim()` would also strip the leading indentation from the first line.
+
+**Example:**
+
+```js
+wrap(str, {trim: true});
+```
+
+### options.cut
+
+Type: `Boolean`
+
+Default: `false`
+
+Break a word between any two letters when the word is longer than the specified width.
+
+**Example:**
+
+```js
+wrap(str, {cut: true});
+```
+
+## About
+
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+</details>
+
+<details>
+<summary><strong>Running Tests</strong></summary>
+
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+
+```sh
+$ npm install && npm test
+```
+
+</details>
+
+<details>
+<summary><strong>Building docs</strong></summary>
+
+_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+
+To generate the readme, run the following command:
+
+```sh
+$ npm install -g verbose/verb#dev verb-generate-readme && verb
+```
+
+</details>
+
+### Related projects
+
+You might also be interested in these projects:
+
+* [common-words](https://www.npmjs.com/package/common-words): Updated list (JSON) of the 100 most common words in the English language. Useful for… [more](https://github.com/jonschlinkert/common-words) | [homepage](https://github.com/jonschlinkert/common-words "Updated list (JSON) of the 100 most common words in the English language. Useful for excluding these words from arrays.")
+* [shuffle-words](https://www.npmjs.com/package/shuffle-words): Shuffle the words in a string and optionally the letters in each word using the… [more](https://github.com/jonschlinkert/shuffle-words) | [homepage](https://github.com/jonschlinkert/shuffle-words "Shuffle the words in a string and optionally the letters in each word using the Fisher-Yates algorithm. Useful for creating test fixtures, benchmarking samples, etc.")
+* [unique-words](https://www.npmjs.com/package/unique-words): Returns an array of unique words, or the number of occurrences of each word in… [more](https://github.com/jonschlinkert/unique-words) | [homepage](https://github.com/jonschlinkert/unique-words "Returns an array of unique words, or the number of occurrences of each word in a string or list.")
+* [wordcount](https://www.npmjs.com/package/wordcount): Count the words in a string. Support for english, CJK and Cyrillic. | [homepage](https://github.com/jonschlinkert/wordcount "Count the words in a string. Support for english, CJK and Cyrillic.")
+
+### Contributors
+
+| **Commits** | **Contributor** |  
+| --- | --- |  
+| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
+| 7  | [OlafConijn](https://github.com/OlafConijn) |  
+| 3  | [doowb](https://github.com/doowb) |  
+| 2  | [aashutoshrathi](https://github.com/aashutoshrathi) |  
+| 2  | [lordvlad](https://github.com/lordvlad) |  
+| 2  | [hildjj](https://github.com/hildjj) |  
+| 1  | [danilosampaio](https://github.com/danilosampaio) |  
+| 1  | [2fd](https://github.com/2fd) |  
+| 1  | [leonard-thieu](https://github.com/leonard-thieu) |  
+| 1  | [mohd-akram](https://github.com/mohd-akram) |  
+| 1  | [toddself](https://github.com/toddself) |  
+| 1  | [wolfgang42](https://github.com/wolfgang42) |  
+| 1  | [zachhale](https://github.com/zachhale) |  
+
+### Author
+
+**Jon Schlinkert**
+
+* [GitHub Profile](https://github.com/jonschlinkert)
+* [Twitter Profile](https://twitter.com/jonschlinkert)
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+
+### License
+
+Copyright © 2023, [Jon Schlinkert](https://github.com/jonschlinkert).
+Released under the [MIT License](LICENSE).
+
+***
+
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on July 22, 2023._
