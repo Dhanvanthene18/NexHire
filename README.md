@@ -1,25 +1,30 @@
-# tinyglobby
+# Update Browserslist DB
 
-[![npm version](https://img.shields.io/npm/v/tinyglobby.svg?maxAge=3600)](https://npmjs.com/package/tinyglobby)
-[![weekly downloads](https://img.shields.io/npm/dw/tinyglobby.svg?maxAge=3600)](https://npmjs.com/package/tinyglobby)
+<img width="120" height="120" alt="Browserslist logo by Anton Popov"
+     src="https://browsersl.ist/logo.svg" align="right">
 
-A fast and minimal alternative to globby and fast-glob, meant to behave the same way.
+CLI tool to update `caniuse-lite` with browsers DB
+from [Browserslist](https://github.com/browserslist/browserslist/) config.
 
-Both globby and fast-glob present some behavior no other globbing lib has,
-which makes it hard to manually replace with something smaller and better.
+Some queries like `last 2 versions` or `>1%` depend on actual data
+from `caniuse-lite`.
 
-This library uses only two subdependencies, compared to `globby`'s [23](https://npmgraph.js.org/?q=globby@16.2.0)
-and `fast-glob`'s [17](https://npmgraph.js.org/?q=fast-glob@3.3.3).
-
-## Usage
-
-```js
-import { glob, globSync } from 'tinyglobby';
-
-await glob(['files/*.ts', '!**/*.d.ts'], { cwd: 'src' });
-globSync('src/**/*.ts', { ignore: '**/*.d.ts' });
+```sh
+npx update-browserslist-db@latest
+```
+Or if using `pnpm`:
+```sh
+pnpm exec update-browserslist-db latest
+```
+Or if using `yarn`:
+```sh
+yarn dlx update-browserslist-db@latest
 ```
 
-## Documentation
+<a href="https://evilmartians.com/?utm_source=update-browserslist-db">
+  <img src="https://evilmartians.com/badges/sponsored-by-evil-martians.svg"
+       alt="Sponsored by Evil Martians" width="236" height="54">
+</a>
 
-Visit https://superchupu.dev/tinyglobby to read the full documentation.
+## Docs
+Read full docs **[here](https://github.com/browserslist/update-db#readme)**.
