@@ -1,15 +1,18 @@
-type Promisable<T> = T | Promise<T>;
+/**
+Escape RegExp special characters.
 
-declare namespace escalade {
-	export type Callback = (
-		directory: string,
-		files: string[],
-	) => Promisable<string | false | void>;
-}
+You can also use this to escape a string that is inserted into the middle of a regex, for example, into a character class.
 
-declare function escalade(
-	directory: string,
-	callback: escalade.Callback,
-): Promise<string | void>;
+@example
+```
+import escapeStringRegexp = require('escape-string-regexp');
 
-export = escalade;
+const escapedString = escapeStringRegexp('How much $ for a 🦄?');
+//=> 'How much \\$ for a 🦄\\?'
+
+new RegExp(escapedString);
+```
+*/
+declare const escapeStringRegexp: (string: string) => string;
+
+export = escapeStringRegexp;
