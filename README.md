@@ -1,115 +1,77 @@
-# file-entry-cache
-> Super simple cache for file metadata, useful for process that work on a given series of files
-> and that only need to repeat the job on the changed ones since the previous run of the process — Edit
+# flat-cache
 
-[![NPM Version](https://img.shields.io/npm/v/file-entry-cache.svg?style=flat)](https://npmjs.org/package/file-entry-cache)
-[![tests](https://github.com/jaredwray/file-entry-cache/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/jaredwray/file-entry-cache/actions/workflows/tests.yaml)
-[![codecov](https://codecov.io/github/jaredwray/file-entry-cache/graph/badge.svg?token=37tZMQE0Sy)](https://codecov.io/github/jaredwray/file-entry-cache)
-[![npm](https://img.shields.io/npm/dm/file-entry-cache)](https://npmjs.com/package/file-entry-cache)
+> A stupidly simple key/value storage using files to persist the data
 
+[![NPM Version](https://img.shields.io/npm/v/flat-cache.svg?style=flat)](https://npmjs.org/package/flat-cache)
+[![tests](https://github.com/jaredwray/flat-cache/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/jaredwray/flat-cache/actions/workflows/tests.yaml)
+[![codecov](https://codecov.io/github/jaredwray/flat-cache/branch/master/graph/badge.svg?token=KxR95XT3NF)](https://codecov.io/github/jaredwray/flat-cache)
+[![npm](https://img.shields.io/npm/dm/flat-cache)](https://npmjs.com/package/flat-cache)
 
 ## install
 
 ```bash
-npm i --save file-entry-cache
+npm i --save flat-cache
 ```
 
 ## Usage
 
-The module exposes two functions `create` and `createFromFile`.
-
-## `create(cacheName, [directory, useCheckSum])`
-- **cacheName**: the name of the cache to be created
-- **directory**: Optional the directory to load the cache from
-- **usecheckSum**: Whether to use md5 checksum to verify if file changed. If false the default will be to use the mtime and size of the file.
-
-## `createFromFile(pathToCache, [useCheckSum])`
-- **pathToCache**: the path to the cache file (this combines the cache name and directory)
-- **useCheckSum**: Whether to use md5 checksum to verify if file changed. If false the default will be to use the mtime and size of the file.
-
 ```js
+const flatCache = require('flat-cache');
 // loads the cache, if one does not exists for the given
 // Id a new one will be prepared to be created
-var fileEntryCache = require('file-entry-cache');
+const cache = flatCache.load('cacheId');
 
-var cache = fileEntryCache.create('testCache');
+// sets a key on the cache
+cache.setKey('key', { foo: 'var' });
 
-var files = expand('../fixtures/*.txt');
+// get a key from the cache
+cache.getKey('key'); // { foo: 'var' }
 
-// the first time this method is called, will return all the files
-var oFiles = cache.getUpdatedFiles(files);
+// fetch the entire persisted object
+cache.all(); // { 'key': { foo: 'var' } }
 
-// this will persist this to disk checking each file stats and
-// updating the meta attributes `size` and `mtime`.
-// custom fields could also be added to the meta object and will be persisted
-// in order to retrieve them later
-cache.reconcile();
+// remove a key
+cache.removeKey('key'); // removes a key from the cache
 
-// use this if you want the non visited file entries to be kept in the cache
-// for more than one execution
-//
-// cache.reconcile( true /* noPrune */)
+// save it to disk
+cache.save(); // very important, if you don't save no changes will be persisted.
+// cache.save( true /* noPrune */) // can be used to prevent the removal of non visited keys
 
-// on a second run
-var cache2 = fileEntryCache.create('testCache');
+// loads the cache from a given directory, if one does
+// not exists for the given Id a new one will be prepared to be created
+const cache = flatCache.load('cacheId', path.resolve('./path/to/folder'));
 
-// will return now only the files that were modified or none
-// if no files were modified previous to the execution of this function
-var oFiles = cache.getUpdatedFiles(files);
+// The following methods are useful to clear the cache
+// delete a given cache
+flatCache.clearCacheById('cacheId'); // removes the cacheId document if one exists.
 
-// if you want to prevent a file from being considered non modified
-// something useful if a file failed some sort of validation
-// you can then remove the entry from the cache doing
-cache.removeEntry('path/to/file'); // path to file should be the same path of the file received on `getUpdatedFiles`
-// that will effectively make the file to appear again as modified until the validation is passed. In that
-// case you should not remove it from the cache
-
-// if you need all the files, so you can determine what to do with the changed ones
-// you can call
-var oFiles = cache.normalizeEntries(files);
-
-// oFiles will be an array of objects like the following
-entry = {
-  key: 'some/name/file', the path to the file
-  changed: true, // if the file was changed since previous run
-  meta: {
-    size: 3242, // the size of the file
-    mtime: 231231231, // the modification time of the file
-    data: {} // some extra field stored for this file (useful to save the result of a transformation on the file
-  }
-}
-
+// delete all cache
+flatCache.clearAll(); // remove the cache directory
 ```
 
 ## Motivation for this module
 
-I needed a super simple and dumb **in-memory cache** with optional disk persistence (write-back cache) in order to make
-a script that will beautify files with `esformatter` to execute only on the files that were changed since the last run.
-
-In doing so the process of beautifying files was reduced from several seconds to a small fraction of a second.
-
-This module uses [flat-cache](https://www.npmjs.com/package/flat-cache) a super simple `key/value` cache storage with
-optional file persistance.
-
-The main idea is to read the files when the task begins, apply the transforms required, and if the process succeed,
-then store the new state of the files. The next time this module request for `getChangedFiles` will return only
-the files that were modified. Making the process to end faster.
-
-This module could also be used by processes that modify the files applying a transform, in that case the result of the
-transform could be stored in the `meta` field, of the entries. Anything added to the meta field will be persisted.
-Those processes won't need to call `getChangedFiles` they will instead call `normalizeEntries` that will return the
-entries with a `changed` field that can be used to determine if the file was changed or not. If it was not changed
-the transformed stored data could be used instead of actually applying the transformation, saving time in case of only
-a few files changed.
-
-In the worst case scenario all the files will be processed. In the best case scenario only a few of them will be processed.
+I needed a super simple and dumb **in-memory cache** with optional disk persistance in order to make
+a script that will beutify files with `esformatter` only execute on the files that were changed since the last run.
+To make that possible we need to store the `fileSize` and `modificationTime` of the files. So a simple `key/value`
+storage was needed and Bam! this module was born.
 
 ## Important notes
-- The values set on the meta attribute of the entries should be `stringify-able` ones if possible, flat-cache uses `circular-json` to try to persist circular structures, but this should be considered experimental. The best results are always obtained with non circular values
-- All the changes to the cache state are done to memory first and only persisted after reconcile.
+
+- If no directory is especified when the `load` method is called, a folder named `.cache` will be created
+  inside the module directory when `cache.save` is called. If you're committing your `node_modules` to any vcs, you
+  might want to ignore the default `.cache` folder, or specify a custom directory.
+- The values set on the keys of the cache should be `stringify-able` ones, meaning no circular references
+- All the changes to the cache state are done to memory
+- I could have used a timer or `Object.observe` to deliver the changes to disk, but I wanted to keep this module
+  intentionally dumb and simple
+- Non visited keys are removed when `cache.save()` is called. If this is not desired, you can pass `true` to the save call
+  like: `cache.save( true /* noPrune */ )`.
 
 ## License
 
 MIT
 
+## Changelog
 
+[changelog](./changelog.md)
