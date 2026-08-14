@@ -1,111 +1,196 @@
-# flatted
+# gensync
 
-[![Downloads](https://img.shields.io/npm/dm/flatted.svg)](https://www.npmjs.com/package/flatted) [![Coverage Status](https://coveralls.io/repos/github/WebReflection/flatted/badge.svg?branch=main)](https://coveralls.io/github/WebReflection/flatted?branch=main) [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC) ![WebReflection status](https://offline.report/status/webreflection.svg)
+This module allows for developers to write common code that can share
+implementation details, hiding whether an underlying request happens
+synchronously or asynchronously. This is in contrast with many current Node
+APIs which explicitly implement the same API twice, once with calls to
+synchronous functions, and once with asynchronous functions.
 
-![snow flake](./flatted.jpg)
+Take for example `fs.readFile` and `fs.readFileSync`, if you're writing an API
+that loads a file and then performs a synchronous operation on the data, it
+can be frustrating to maintain two parallel functions.
 
-<sup>**Social Media Photo by [Matt Seymour](https://unsplash.com/@mattseymour) on [Unsplash](https://unsplash.com/)**</sup>
 
-A super light (0.5K) and fast circular JSON parser, directly from the creator of [CircularJSON](https://github.com/WebReflection/circular-json/#circularjson).
-
-Available also for **[PHP](./php/flatted.php)**.
-
-Available also for **[Python](./python/flatted.py)**.
-
-Available also for **[Go](./golang/README.md)**.
-
-- - -
-
-## ℹ️ JSON only values
-
-If you need anything more complex than values JSON understands, there is a standard approach to recursion and more data-types than what JSON allows, and it's part of the [Structured Clone polyfill](https://github.com/ungap/structured-clone/#readme).
-
-- - -
+## Example
 
 ```js
-npm i flatted
+const fs = require("fs");
+const gensync = require("gensync");
+
+const readFile = gensync({
+  sync: fs.readFileSync,
+  errback: fs.readFile,
+});
+
+const myOperation = gensync(function* (filename) {
+  const code = yield* readFile(filename, "utf8");
+
+  return "// some custom prefix\n" + code;
+});
+
+// Load and add the prefix synchronously:
+const result = myOperation.sync("./some-file.js");
+
+// Load and add the prefix asynchronously with promises:
+myOperation.async("./some-file.js").then(result => {
+
+});
+
+// Load and add the prefix asynchronously with promises:
+myOperation.errback("./some-file.js", (err, result) => {
+
+});
 ```
 
-Usable via [CDN](https://unpkg.com/flatted) or as regular module.
+This could even be exposed as your official API by doing
+```js
+// Using the common 'Sync' suffix for sync functions, and 'Async' suffix for
+// promise-returning versions.
+exports.myOperationSync = myOperation.sync;
+exports.myOperationAsync = myOperation.async;
+exports.myOperation = myOperation.errback;
+```
+or potentially expose one of the async versions as the default, with a
+`.sync` property on the function to expose the synchronous version.
+```js
+module.exports = myOperation.errback;
+module.exports.sync = myOperation.sync;
+````
+
+
+## API
+
+### gensync(generatorFnOrOptions)
+
+Returns a function that can be "await"-ed in another `gensync` generator
+function, or executed via
+
+* `.sync(...args)` - Returns the computed value, or throws.
+* `.async(...args)` - Returns a promise for the computed value.
+* `.errback(...args, (err, result) => {})` - Calls the callback with the computed value, or error.
+
+
+#### Passed a generator
+
+Wraps the generator to populate the `.sync`/`.async`/`.errback` helpers above to
+allow for evaluation of the generator for the final value.
+
+##### Example
 
 ```js
-// ESM
-import {parse, stringify, toJSON, fromJSON} from 'flatted';
+const readFile = function* () {
+  return 42;
+};
 
-// CJS
-const {parse, stringify, toJSON, fromJSON} = require('flatted');
+const readFileAndMore = gensync(function* (){
+  const val = yield* readFile();
+  return 42 + val;
+});
 
-const a = [{}];
-a[0].a = a;
-a.push(a);
+// In general cases
+const code = readFileAndMore.sync("./file.js", "utf8");
+readFileAndMore.async("./file.js", "utf8").then(code => {})
+readFileAndMore.errback("./file.js", "utf8", (err, code) => {});
 
-stringify(a); // [["1","0"],{"a":"0"}]
+// In a generator being called indirectly with .sync/.async/.errback
+const code = yield* readFileAndMore("./file.js", "utf8");
 ```
 
-## toJSON and fromJSON
 
-If you'd like to implicitly survive JSON serialization, these two helpers helps:
+#### Passed an options object
+
+* `opts.sync`
+
+  Example: `(...args) => 4`
+
+  A function that will be called when `.sync()` is called on the `gensync()`
+  result, or when the result is passed to `yield*` in another generator that
+  is being run synchronously.
+
+  Also called for `.async()` calls if no async handlers are provided.
+
+* `opts.async`
+
+  Example: `async (...args) => 4`
+
+  A function that will be called when `.async()` or `.errback()` is called on
+  the `gensync()` result, or when the result is passed to `yield*` in another
+  generator that is being run asynchronously.
+
+* `opts.errback`
+
+  Example: `(...args, cb) => cb(null, 4)`
+
+  A function that will be called when `.async()` or `.errback()` is called on
+  the `gensync()` result, or when the result is passed to `yield*` in another
+  generator that is being run asynchronously.
+
+  This option allows for simpler compatibility with many existing Node APIs,
+  and also avoids introducing the extra even loop turns that promises introduce
+  to access the result value.
+
+* `opts.name`
+
+  Example: `"readFile"`
+
+  A string name to apply to the returned function. If no value is provided,
+  the name of `errback`/`async`/`sync` functions will be used, with any
+  `Sync` or `Async` suffix stripped off. If the callback is simply named
+  with ES6 inference (same name as the options property), the name is ignored.
+
+* `opts.arity`
+
+  Example: `4`
+
+  A number for the length to set on the returned function. If no value
+  is provided, the length will be carried over from the `sync` function's
+  `length` value.
+
+##### Example
 
 ```js
-import {toJSON, fromJSON} from 'flatted';
+const readFile = gensync({
+  sync: fs.readFileSync,
+  errback: fs.readFile,
+});
 
-class RecursiveMap extends Map {
-  static fromJSON(any) {
-    return new this(fromJSON(any));
-  }
-  toJSON() {
-    return toJSON([...this.entries()]);
-  }
-}
-
-const recursive = new RecursiveMap;
-const same = {};
-same.same = same;
-recursive.set('same', same);
-
-const asString = JSON.stringify(recursive);
-const asMap = RecursiveMap.fromJSON(JSON.parse(asString));
-asMap.get('same') === asMap.get('same').same;
-// true
+const code = readFile.sync("./file.js", "utf8");
+readFile.async("./file.js", "utf8").then(code => {})
+readFile.errback("./file.js", "utf8", (err, code) => {});
 ```
 
 
-## Flatted VS JSON
+### gensync.all(iterable)
 
-As it is for every other specialized format capable of serializing and deserializing circular data, you should never `JSON.parse(Flatted.stringify(data))`, and you should never `Flatted.parse(JSON.stringify(data))`.
+`Promise.all`-like combinator that works with an iterable of generator objects
+that could be passed to `yield*` within a gensync generator.
 
-The only way this could work is to `Flatted.parse(Flatted.stringify(data))`, as it is also for _CircularJSON_ or any other, otherwise there's no granted data integrity.
-
-Also please note this project serializes and deserializes only data compatible with JSON, so that sockets, or anything else with internal classes different from those allowed by JSON standard, won't be serialized and unserialized as expected.
-
-
-### New in V1: Exact same JSON API
-
-  * Added a [reviver](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Syntax) parameter to `.parse(string, reviver)` and revive your own objects.
-  * Added a [replacer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#Syntax) and a `space` parameter to `.stringify(object, replacer, space)` for feature parity with JSON signature.
-
-
-### Compatibility
-All ECMAScript engines compatible with `Map`, `Set`, `Object.keys`, and `Array.prototype.reduce` will work, even if polyfilled.
-
-
-### How does it work ?
-While stringifying, all Objects, including Arrays, and strings, are flattened out and replaced as unique index. `*`
-
-Once parsed, all indexes will be replaced through the flattened collection.
-
-<sup><sub>`*` represented as string to avoid conflicts with numbers</sub></sup>
+#### Example
 
 ```js
-// logic example
-var a = [{one: 1}, {two: '2'}];
-a[0].a = a;
-// a is the main object, will be at index '0'
-// {one: 1} is the second object, index '1'
-// {two: '2'} the third, in '2', and it has a string
-// which will be found at index '3'
+const loadFiles = gensync(function* () {
+  return yield* gensync.all([
+    readFile("./one.js"),
+    readFile("./two.js"),
+    readFile("./three.js"),
+  ]);
+});
+```
 
-Flatted.stringify(a);
-// [["1","2"],{"one":1,"a":"0"},{"two":"3"},"2"]
-// a[one,two]    {one: 1, a}    {two: '2'}  '2'
+
+### gensync.race(iterable)
+
+`Promise.race`-like combinator that works with an iterable of generator objects
+that could be passed to `yield*` within a gensync generator.
+
+#### Example
+
+```js
+const loadFiles = gensync(function* () {
+  return yield* gensync.race([
+    readFile("./one.js"),
+    readFile("./two.js"),
+    readFile("./three.js"),
+  ]);
+});
 ```
