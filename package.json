@@ -1,31 +1,69 @@
 {
-  "name": "isexe",
-  "version": "2.0.0",
-  "description": "Minimal module to check if a file is executable.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
+  "name": "is-extglob",
+  "description": "Returns true if a string has an extglob.",
+  "version": "2.1.1",
+  "homepage": "https://github.com/jonschlinkert/is-extglob",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "repository": "jonschlinkert/is-extglob",
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/is-extglob/issues"
   },
-  "devDependencies": {
-    "mkdirp": "^0.5.1",
-    "rimraf": "^2.5.0",
-    "tap": "^10.3.0"
+  "license": "MIT",
+  "files": [
+    "index.js"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
   },
   "scripts": {
-    "test": "tap test/*.js --100",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "postpublish": "git push origin --all; git push origin --tags"
+    "test": "mocha"
   },
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/isaacs/isexe.git"
+  "devDependencies": {
+    "gulp-format-md": "^0.1.10",
+    "mocha": "^3.0.2"
   },
-  "keywords": [],
-  "bugs": {
-    "url": "https://github.com/isaacs/isexe/issues"
-  },
-  "homepage": "https://github.com/isaacs/isexe#readme"
+  "keywords": [
+    "bash",
+    "braces",
+    "check",
+    "exec",
+    "expression",
+    "extglob",
+    "glob",
+    "globbing",
+    "globstar",
+    "is",
+    "match",
+    "matches",
+    "pattern",
+    "regex",
+    "regular",
+    "string",
+    "test"
+  ],
+  "verb": {
+    "toc": false,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "related": {
+      "list": [
+        "has-glob",
+        "is-glob",
+        "micromatch"
+      ]
+    },
+    "reflinks": [
+      "verb",
+      "verb-generate-readme"
+    ],
+    "lint": {
+      "reflinks": true
+    }
+  }
 }
