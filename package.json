@@ -1,40 +1,31 @@
 {
-  "name": "imurmurhash",
-  "version": "0.1.4",
-  "description": "An incremental implementation of MurmurHash3",
-  "homepage": "https://github.com/jensyt/imurmurhash-js",
-  "main": "imurmurhash.js",
-  "files": [
-    "imurmurhash.js",
-    "imurmurhash.min.js",
-    "package.json",
-    "README.md"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/jensyt/imurmurhash-js"
-  },
-  "bugs": {
-    "url": "https://github.com/jensyt/imurmurhash-js/issues"
-  },
-  "keywords": [
-    "murmur",
-    "murmurhash",
-    "murmurhash3",
-    "hash",
-    "incremental"
-  ],
-  "author": {
-    "name": "Jens Taylor",
-    "email": "jensyt@gmail.com",
-    "url": "https://github.com/homebrewing"
-  },
-  "license": "MIT",
-  "dependencies": {
+  "name": "isexe",
+  "version": "2.0.0",
+  "description": "Minimal module to check if a file is executable.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
   },
   "devDependencies": {
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.0",
+    "tap": "^10.3.0"
   },
-  "engines": {
-    "node": ">=0.8.19"
-  }
+  "scripts": {
+    "test": "tap test/*.js --100",
+    "preversion": "npm test",
+    "postversion": "npm publish",
+    "postpublish": "git push origin --all; git push origin --tags"
+  },
+  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isaacs/isexe.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/isaacs/isexe/issues"
+  },
+  "homepage": "https://github.com/isaacs/isexe#readme"
 }
