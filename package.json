@@ -1,43 +1,43 @@
 {
-  "name": "json-schema-traverse",
-  "version": "0.4.1",
-  "description": "Traverse JSON Schema passing each schema object to callback",
+  "name": "json-stable-stringify-without-jsonify",
+  "version": "1.0.1",
+  "description": "deterministic JSON.stringify() with custom sorting to get deterministic hashes from stringified results, with no public domain dependencies",
   "main": "index.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "tape": "~1.0.4"
+  },
   "scripts": {
-    "eslint": "eslint index.js spec",
-    "test-spec": "mocha spec -R spec",
-    "test": "npm run eslint && nyc npm run test-spec"
+    "test": "tape test/*.js"
+  },
+  "testling": {
+    "files": "test/*.js",
+    "browsers": [
+      "ie/8..latest",
+      "ff/5", "ff/latest",
+      "chrome/15", "chrome/latest",
+      "safari/latest",
+      "opera/latest"
+    ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/epoberezkin/json-schema-traverse.git"
+    "url": "git://github.com/samn/json-stable-stringify.git"
   },
+  "homepage": "https://github.com/samn/json-stable-stringify",
   "keywords": [
-    "JSON-Schema",
-    "traverse",
-    "iterate"
+    "json",
+    "stringify",
+    "deterministic",
+    "hash",
+    "sort",
+    "stable"
   ],
-  "author": "Evgeny Poberezkin",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/epoberezkin/json-schema-traverse/issues"
+  "author": {
+    "name": "James Halliday",
+    "email": "mail@substack.net",
+    "url": "http://substack.net"
   },
-  "homepage": "https://github.com/epoberezkin/json-schema-traverse#readme",
-  "devDependencies": {
-    "coveralls": "^2.13.1",
-    "eslint": "^3.19.0",
-    "mocha": "^3.4.2",
-    "nyc": "^11.0.2",
-    "pre-commit": "^1.2.2"
-  },
-  "nyc": {
-    "exclude": [
-      "**/spec/**",
-      "node_modules"
-    ],
-    "reporter": [
-      "lcov",
-      "text-summary"
-    ]
-  }
+  "license": "MIT"
 }
