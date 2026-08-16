@@ -1,81 +1,56 @@
 {
-  "name": "is-glob",
-  "description": "Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience.",
-  "version": "4.0.3",
-  "homepage": "https://github.com/micromatch/is-glob",
-  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
-  "contributors": [
-    "Brian Woodward (https://twitter.com/doowb)",
-    "Daniel Perez (https://tuvistavie.com)",
-    "Jon Schlinkert (http://twitter.com/jonschlinkert)"
-  ],
-  "repository": "micromatch/is-glob",
-  "bugs": {
-    "url": "https://github.com/micromatch/is-glob/issues"
-  },
-  "license": "MIT",
-  "files": [
-    "index.js"
-  ],
-  "main": "index.js",
+  "name": "jsesc",
+  "version": "3.1.0",
+  "description": "Given some data, jsesc returns the shortest possible stringified & ASCII-safe representation of that data.",
+  "homepage": "https://mths.be/jsesc",
   "engines": {
-    "node": ">=0.10.0"
+    "node": ">=6"
   },
+  "main": "jsesc.js",
+  "bin": "bin/jsesc",
+  "man": "man/jsesc.1",
+  "keywords": [
+    "buffer",
+    "escape",
+    "javascript",
+    "json",
+    "map",
+    "set",
+    "string",
+    "stringify",
+    "tool"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Mathias Bynens",
+    "url": "https://mathiasbynens.be/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mathiasbynens/jsesc.git"
+  },
+  "bugs": "https://github.com/mathiasbynens/jsesc/issues",
+  "files": [
+    "LICENSE-MIT.txt",
+    "jsesc.js",
+    "bin/",
+    "man/"
+  ],
   "scripts": {
-    "test": "mocha && node benchmark.js"
-  },
-  "dependencies": {
-    "is-extglob": "^2.1.1"
+    "build": "grunt template",
+    "coveralls": "istanbul cover --verbose --dir 'coverage' 'tests/tests.js' && coveralls < coverage/lcov.info'",
+    "cover": "istanbul cover --report 'html' --verbose --dir 'coverage' 'tests/tests.js'",
+    "test": "mocha tests"
   },
   "devDependencies": {
-    "gulp-format-md": "^0.1.10",
-    "mocha": "^3.0.2"
-  },
-  "keywords": [
-    "bash",
-    "braces",
-    "check",
-    "exec",
-    "expression",
-    "extglob",
-    "glob",
-    "globbing",
-    "globstar",
-    "is",
-    "match",
-    "matches",
-    "pattern",
-    "regex",
-    "regular",
-    "string",
-    "test"
-  ],
-  "verb": {
-    "layout": "default",
-    "plugins": [
-      "gulp-format-md"
-    ],
-    "related": {
-      "list": [
-        "assemble",
-        "base",
-        "update",
-        "verb"
-      ]
-    },
-    "reflinks": [
-      "assemble",
-      "bach",
-      "base",
-      "composer",
-      "gulp",
-      "has-glob",
-      "is-valid-glob",
-      "micromatch",
-      "npm",
-      "scaffold",
-      "verb",
-      "vinyl"
-    ]
+    "coveralls": "^2.11.6",
+    "grunt": "^0.4.5",
+    "grunt-cli": "^1.3.2",
+    "grunt-template": "^0.2.3",
+    "istanbul": "^0.4.2",
+    "mocha": "^5.2.0",
+    "regenerate": "^1.3.0",
+    "requirejs": "^2.1.22",
+    "unicode-13.0.0": "0.8.0"
   }
 }

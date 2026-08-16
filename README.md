@@ -1,206 +1,422 @@
-# is-glob [![NPM version](https://img.shields.io/npm/v/is-glob.svg?style=flat)](https://www.npmjs.com/package/is-glob) [![NPM monthly downloads](https://img.shields.io/npm/dm/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![NPM total downloads](https://img.shields.io/npm/dt/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![Build Status](https://img.shields.io/github/workflow/status/micromatch/is-glob/dev)](https://github.com/micromatch/is-glob/actions)
+# jsesc
 
-> Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience.
+Given some data, _jsesc_ returns a stringified representation of that data. jsesc is similar to `JSON.stringify()` except:
 
-Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
+1. it outputs JavaScript instead of JSON [by default](#json), enabling support for data structures like ES6 maps and sets;
+2. it offers [many options](#api) to customize the output;
+3. its output is ASCII-safe [by default](#minimal), thanks to its use of [escape sequences](https://mathiasbynens.be/notes/javascript-escapes) where needed.
 
-## Install
+For any input, jsesc generates the shortest possible valid printable-ASCII-only output. [Here’s an online demo.](https://mothereff.in/js-escapes)
 
-Install with [npm](https://www.npmjs.com/):
+jsesc’s output can be used instead of `JSON.stringify`’s to avoid [mojibake](https://en.wikipedia.org/wiki/Mojibake) and other encoding issues, or even to [avoid errors](https://twitter.com/annevk/status/380000829643571200) when passing JSON-formatted data (which may contain U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR, or [lone surrogates](https://esdiscuss.org/topic/code-points-vs-unicode-scalar-values#content-14)) to a JavaScript parser or an UTF-8 encoder.
 
-```sh
-$ npm install --save is-glob
+## Installation
+
+Via [npm](https://www.npmjs.com/):
+
+```bash
+npm install jsesc
 ```
 
-You might also be interested in [is-valid-glob](https://github.com/jonschlinkert/is-valid-glob) and [has-glob](https://github.com/jonschlinkert/has-glob).
-
-## Usage
+In [Node.js](https://nodejs.org/):
 
 ```js
-var isGlob = require('is-glob');
+const jsesc = require('jsesc');
 ```
 
-### Default behavior
+## API
 
-**True**
+### `jsesc(value, options)`
 
-Patterns that have glob characters or regex patterns will return `true`:
+This function takes a value and returns an escaped version of the value where any characters that are not printable ASCII symbols are escaped using the shortest possible (but valid) [escape sequences for use in JavaScript strings](https://mathiasbynens.be/notes/javascript-escapes). The first supported value type is strings:
 
 ```js
-isGlob('!foo.js');
-isGlob('*.js');
-isGlob('**/abc.js');
-isGlob('abc/*.js');
-isGlob('abc/(aaa|bbb).js');
-isGlob('abc/[a-z].js');
-isGlob('abc/{a,b}.js');
-//=> true
+jsesc('Ich ♥ Bücher');
+// → 'Ich \\u2665 B\\xFCcher'
+
+jsesc('foo 𝌆 bar');
+// → 'foo \\uD834\\uDF06 bar'
 ```
 
-Extglobs
+Instead of a string, the `value` can also be an array, an object, a map, a set, or a buffer. In such cases, `jsesc` returns a stringified version of the value where any characters that are not printable ASCII symbols are escaped in the same way.
 
 ```js
-isGlob('abc/@(a).js');
-isGlob('abc/!(a).js');
-isGlob('abc/+(a).js');
-isGlob('abc/*(a).js');
-isGlob('abc/?(a).js');
-//=> true
+// Escaping an array
+jsesc([
+  'Ich ♥ Bücher', 'foo 𝌆 bar'
+]);
+// → '[\'Ich \\u2665 B\\xFCcher\',\'foo \\uD834\\uDF06 bar\']'
+
+// Escaping an object
+jsesc({
+  'Ich ♥ Bücher': 'foo 𝌆 bar'
+});
+// → '{\'Ich \\u2665 B\\xFCcher\':\'foo \\uD834\\uDF06 bar\'}'
 ```
 
-**False**
+The optional `options` argument accepts an object with the following options:
 
-Escaped globs or extglobs return `false`:
+#### `quotes`
+
+The default value for the `quotes` option is `'single'`. This means that any occurrences of `'` in the input string are escaped as `\'`, so that the output can be used in a string literal wrapped in single quotes.
 
 ```js
-isGlob('abc/\\@(a).js');
-isGlob('abc/\\!(a).js');
-isGlob('abc/\\+(a).js');
-isGlob('abc/\\*(a).js');
-isGlob('abc/\\?(a).js');
-isGlob('\\!foo.js');
-isGlob('\\*.js');
-isGlob('\\*\\*/abc.js');
-isGlob('abc/\\*.js');
-isGlob('abc/\\(aaa|bbb).js');
-isGlob('abc/\\[a-z].js');
-isGlob('abc/\\{a,b}.js');
-//=> false
+jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.');
+// → 'Lorem ipsum "dolor" sit \\\'amet\\\' etc.'
+
+jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
+  'quotes': 'single'
+});
+// → '`Lorem` ipsum "dolor" sit \\\'amet\\\' etc.'
+// → "`Lorem` ipsum \"dolor\" sit \\'amet\\' etc."
 ```
 
-Patterns that do not have glob patterns return `false`:
+If you want to use the output as part of a string literal wrapped in double quotes, set the `quotes` option to `'double'`.
 
 ```js
-isGlob('abc.js');
-isGlob('abc/def/ghi.js');
-isGlob('foo.js');
-isGlob('abc/@.js');
-isGlob('abc/+.js');
-isGlob('abc/?.js');
-isGlob();
-isGlob(null);
-//=> false
+jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
+  'quotes': 'double'
+});
+// → '`Lorem` ipsum \\"dolor\\" sit \'amet\' etc.'
+// → "`Lorem` ipsum \\\"dolor\\\" sit 'amet' etc."
 ```
 
-Arrays are also `false` (If you want to check if an array has a glob pattern, use [has-glob](https://github.com/jonschlinkert/has-glob)):
+If you want to use the output as part of a template literal (i.e. wrapped in backticks), set the `quotes` option to `'backtick'`.
 
 ```js
-isGlob(['**/*.js']);
-isGlob(['foo.js']);
-//=> false
+jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
+  'quotes': 'backtick'
+});
+// → '\\`Lorem\\` ipsum "dolor" sit \'amet\' etc.'
+// → "\\`Lorem\\` ipsum \"dolor\" sit 'amet' etc."
+// → `\\\`Lorem\\\` ipsum "dolor" sit 'amet' etc.`
 ```
 
-### Option strict
-
-When `options.strict === false` the behavior is less strict in determining if a pattern is a glob. Meaning that
-some patterns that would return `false` may return `true`. This is done so that matching libraries like [micromatch](https://github.com/micromatch/micromatch) have a chance at determining if the pattern is a glob or not.
-
-**True**
-
-Patterns that have glob characters or regex patterns will return `true`:
+This setting also affects the output for arrays and objects:
 
 ```js
-isGlob('!foo.js', {strict: false});
-isGlob('*.js', {strict: false});
-isGlob('**/abc.js', {strict: false});
-isGlob('abc/*.js', {strict: false});
-isGlob('abc/(aaa|bbb).js', {strict: false});
-isGlob('abc/[a-z].js', {strict: false});
-isGlob('abc/{a,b}.js', {strict: false});
-//=> true
+jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
+  'quotes': 'double'
+});
+// → '{"Ich \\u2665 B\\xFCcher":"foo \\uD834\\uDF06 bar"}'
+
+jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
+  'quotes': 'double'
+});
+// → '["Ich \\u2665 B\\xFCcher","foo \\uD834\\uDF06 bar"]'
 ```
 
-Extglobs
+#### `numbers`
+
+The default value for the `numbers` option is `'decimal'`. This means that any numeric values are represented using decimal integer literals. Other valid options are `binary`, `octal`, and `hexadecimal`, which result in binary integer literals, octal integer literals, and hexadecimal integer literals, respectively.
 
 ```js
-isGlob('abc/@(a).js', {strict: false});
-isGlob('abc/!(a).js', {strict: false});
-isGlob('abc/+(a).js', {strict: false});
-isGlob('abc/*(a).js', {strict: false});
-isGlob('abc/?(a).js', {strict: false});
-//=> true
+jsesc(42, {
+  'numbers': 'binary'
+});
+// → '0b101010'
+
+jsesc(42, {
+  'numbers': 'octal'
+});
+// → '0o52'
+
+jsesc(42, {
+  'numbers': 'decimal'
+});
+// → '42'
+
+jsesc(42, {
+  'numbers': 'hexadecimal'
+});
+// → '0x2A'
 ```
 
-**False**
+#### `wrap`
 
-Escaped globs or extglobs return `false`:
+The `wrap` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, the output is a valid JavaScript string literal wrapped in quotes. The type of quotes can be specified through the `quotes` setting.
 
 ```js
-isGlob('\\!foo.js', {strict: false});
-isGlob('\\*.js', {strict: false});
-isGlob('\\*\\*/abc.js', {strict: false});
-isGlob('abc/\\*.js', {strict: false});
-isGlob('abc/\\(aaa|bbb).js', {strict: false});
-isGlob('abc/\\[a-z].js', {strict: false});
-isGlob('abc/\\{a,b}.js', {strict: false});
-//=> false
+jsesc('Lorem ipsum "dolor" sit \'amet\' etc.', {
+  'quotes': 'single',
+  'wrap': true
+});
+// → '\'Lorem ipsum "dolor" sit \\\'amet\\\' etc.\''
+// → "\'Lorem ipsum \"dolor\" sit \\\'amet\\\' etc.\'"
+
+jsesc('Lorem ipsum "dolor" sit \'amet\' etc.', {
+  'quotes': 'double',
+  'wrap': true
+});
+// → '"Lorem ipsum \\"dolor\\" sit \'amet\' etc."'
+// → "\"Lorem ipsum \\\"dolor\\\" sit \'amet\' etc.\""
 ```
 
-## About
+#### `es6`
 
-<details>
-<summary><strong>Contributing</strong></summary>
+The `es6` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, any astral Unicode symbols in the input are escaped using [ECMAScript 6 Unicode code point escape sequences](https://mathiasbynens.be/notes/javascript-escapes#unicode-code-point) instead of using separate escape sequences for each surrogate half. If backwards compatibility with ES5 environments is a concern, don’t enable this setting. If the `json` setting is enabled, the value for the `es6` setting is ignored (as if it was `false`).
 
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+```js
+// By default, the `es6` option is disabled:
+jsesc('foo 𝌆 bar 💩 baz');
+// → 'foo \\uD834\\uDF06 bar \\uD83D\\uDCA9 baz'
 
-</details>
+// To explicitly disable it:
+jsesc('foo 𝌆 bar 💩 baz', {
+  'es6': false
+});
+// → 'foo \\uD834\\uDF06 bar \\uD83D\\uDCA9 baz'
 
-<details>
-<summary><strong>Running Tests</strong></summary>
-
-Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
-
-```sh
-$ npm install && npm test
+// To enable it:
+jsesc('foo 𝌆 bar 💩 baz', {
+  'es6': true
+});
+// → 'foo \\u{1D306} bar \\u{1F4A9} baz'
 ```
 
-</details>
+#### `escapeEverything`
 
-<details>
-<summary><strong>Building docs</strong></summary>
+The `escapeEverything` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, all the symbols in the output are escaped — even printable ASCII symbols.
 
-_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
-
-To generate the readme, run the following command:
-
-```sh
-$ npm install -g verbose/verb#dev verb-generate-readme && verb
+```js
+jsesc('lolwat"foo\'bar', {
+  'escapeEverything': true
+});
+// → '\\x6C\\x6F\\x6C\\x77\\x61\\x74\\"\\x66\\x6F\\x6F\\\'\\x62\\x61\\x72'
+// → "\\x6C\\x6F\\x6C\\x77\\x61\\x74\\\"\\x66\\x6F\\x6F\\'\\x62\\x61\\x72"
 ```
 
-</details>
+This setting also affects the output for string literals within arrays and objects.
 
-### Related projects
+#### `minimal`
 
-You might also be interested in these projects:
+The `minimal` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, only a limited set of symbols in the output are escaped:
 
-* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
-* [base](https://www.npmjs.com/package/base): Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks | [homepage](https://github.com/node-base/base "Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks")
-* [update](https://www.npmjs.com/package/update): Be scalable! Update is a new, open source developer framework and CLI for automating updates… [more](https://github.com/update/update) | [homepage](https://github.com/update/update "Be scalable! Update is a new, open source developer framework and CLI for automating updates of any kind in code projects.")
-* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
+* U+0000 `\0`
+* U+0008 `\b`
+* U+0009 `\t`
+* U+000A `\n`
+* U+000C `\f`
+* U+000D `\r`
+* U+005C `\\`
+* U+2028 `\u2028`
+* U+2029 `\u2029`
+* whatever symbol is being used for wrapping string literals (based on [the `quotes` option](#quotes))
+* [lone surrogates](https://esdiscuss.org/topic/code-points-vs-unicode-scalar-values#content-14)
 
-### Contributors
+Note: with this option enabled, jsesc output is no longer guaranteed to be ASCII-safe.
 
-| **Commits** | **Contributor** |  
-| --- | --- |  
-| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
-| 5  | [doowb](https://github.com/doowb) |  
-| 1  | [phated](https://github.com/phated) |  
-| 1  | [danhper](https://github.com/danhper) |  
-| 1  | [paulmillr](https://github.com/paulmillr) |  
+```js
+jsesc('foo\u2029bar\nbaz©qux𝌆flops', {
+  'minimal': false
+});
+// → 'foo\\u2029bar\\nbaz©qux𝌆flops'
+```
 
-### Author
+#### `isScriptContext`
 
-**Jon Schlinkert**
+The `isScriptContext` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, occurrences of [`</script` and `</style`](https://mathiasbynens.be/notes/etago) in the output are escaped as `<\/script` and `<\/style`, and [`<!--`](https://mathiasbynens.be/notes/etago#comment-8) is escaped as `\x3C!--` (or `\u003C!--` when the `json` option is enabled). This setting is useful when jsesc’s output ends up as part of a `<script>` or `<style>` element in an HTML document.
 
-* [GitHub Profile](https://github.com/jonschlinkert)
-* [Twitter Profile](https://twitter.com/jonschlinkert)
-* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+```js
+jsesc('foo</script>bar', {
+  'isScriptContext': true
+});
+// → 'foo<\\/script>bar'
+```
 
-### License
+#### `compact`
 
-Copyright © 2019, [Jon Schlinkert](https://github.com/jonschlinkert).
-Released under the [MIT License](LICENSE).
+The `compact` option takes a boolean value (`true` or `false`), and defaults to `true` (enabled). When enabled, the output for arrays and objects is as compact as possible; it’s not formatted nicely.
 
-***
+```js
+jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
+  'compact': true // this is the default
+});
+// → '{\'Ich \u2665 B\xFCcher\':\'foo \uD834\uDF06 bar\'}'
 
-_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on March 27, 2019._
+jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
+  'compact': false
+});
+// → '{\n\t\'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
+
+jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
+  'compact': false
+});
+// → '[\n\t\'Ich \u2665 B\xFCcher\',\n\t\'foo \uD834\uDF06 bar\'\n]'
+```
+
+This setting has no effect on the output for strings.
+
+#### `indent`
+
+The `indent` option takes a string value, and defaults to `'\t'`. When the `compact` setting is disabled (`false`), the value of the `indent` option is used to format the output for arrays and objects.
+
+```js
+jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
+  'compact': false,
+  'indent': '\t' // this is the default
+});
+// → '{\n\t\'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
+
+jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
+  'compact': false,
+  'indent': '  '
+});
+// → '{\n  \'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
+
+jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
+  'compact': false,
+  'indent': '  '
+});
+// → '[\n  \'Ich \u2665 B\xFCcher\',\n\  t\'foo \uD834\uDF06 bar\'\n]'
+```
+
+This setting has no effect on the output for strings.
+
+#### `indentLevel`
+
+The `indentLevel` option takes a numeric value, and defaults to `0`. It represents the current indentation level, i.e. the number of times the value of [the `indent` option](#indent) is repeated.
+
+```js
+jsesc(['a', 'b', 'c'], {
+  'compact': false,
+  'indentLevel': 1
+});
+// → '[\n\t\t\'a\',\n\t\t\'b\',\n\t\t\'c\'\n\t]'
+
+jsesc(['a', 'b', 'c'], {
+  'compact': false,
+  'indentLevel': 2
+});
+// → '[\n\t\t\t\'a\',\n\t\t\t\'b\',\n\t\t\t\'c\'\n\t\t]'
+```
+
+#### `json`
+
+The `json` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, the output is valid JSON. [Hexadecimal character escape sequences](https://mathiasbynens.be/notes/javascript-escapes#hexadecimal) and [the `\v` or `\0` escape sequences](https://mathiasbynens.be/notes/javascript-escapes#single) are not used. Setting `json: true` implies `quotes: 'double', wrap: true, es6: false`, although these values can still be overridden if needed — but in such cases, the output won’t be valid JSON anymore.
+
+```js
+jsesc('foo\x00bar\xFF\uFFFDbaz', {
+  'json': true
+});
+// → '"foo\\u0000bar\\u00FF\\uFFFDbaz"'
+
+jsesc({ 'foo\x00bar\xFF\uFFFDbaz': 'foo\x00bar\xFF\uFFFDbaz' }, {
+  'json': true
+});
+// → '{"foo\\u0000bar\\u00FF\\uFFFDbaz":"foo\\u0000bar\\u00FF\\uFFFDbaz"}'
+
+jsesc([ 'foo\x00bar\xFF\uFFFDbaz', 'foo\x00bar\xFF\uFFFDbaz' ], {
+  'json': true
+});
+// → '["foo\\u0000bar\\u00FF\\uFFFDbaz","foo\\u0000bar\\u00FF\\uFFFDbaz"]'
+
+// Values that are acceptable in JSON but aren’t strings, arrays, or object
+// literals can’t be escaped, so they’ll just be preserved:
+jsesc([ 'foo\x00bar', [1, '©', { 'foo': true, 'qux': null }], 42 ], {
+  'json': true
+});
+// → '["foo\\u0000bar",[1,"\\u00A9",{"foo":true,"qux":null}],42]'
+// Values that aren’t allowed in JSON are run through `JSON.stringify()`:
+jsesc([ undefined, -Infinity ], {
+  'json': true
+});
+// → '[null,null]'
+```
+
+**Note:** Using this option on objects or arrays that contain non-string values relies on `JSON.stringify()`. For legacy environments like IE ≤ 7, use [a `JSON` polyfill](http://bestiejs.github.io/json3/).
+
+#### `lowercaseHex`
+
+The `lowercaseHex` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, any alphabetical hexadecimal digits in escape sequences as well as any hexadecimal integer literals (see [the `numbers` option](#numbers)) in the output are in lowercase.
+
+```js
+jsesc('Ich ♥ Bücher', {
+  'lowercaseHex': true
+});
+// → 'Ich \\u2665 B\\xfccher'
+//                    ^^
+
+jsesc(42, {
+  'numbers': 'hexadecimal',
+  'lowercaseHex': true
+});
+// → '0x2a'
+//      ^^
+```
+
+### `jsesc.version`
+
+A string representing the semantic version number.
+
+### Using the `jsesc` binary
+
+To use the `jsesc` binary in your shell, simply install jsesc globally using npm:
+
+```bash
+npm install -g jsesc
+```
+
+After that you’re able to escape strings from the command line:
+
+```bash
+$ jsesc 'föo ♥ bår 𝌆 baz'
+f\xF6o \u2665 b\xE5r \uD834\uDF06 baz
+```
+
+To escape arrays or objects containing string values, use the `-o`/`--object` option:
+
+```bash
+$ jsesc --object '{ "föo": "♥", "bår": "𝌆 baz" }'
+{'f\xF6o':'\u2665','b\xE5r':'\uD834\uDF06 baz'}
+```
+
+To prettify the output in such cases, use the `-p`/`--pretty` option:
+
+```bash
+$ jsesc --pretty '{ "föo": "♥", "bår": "𝌆 baz" }'
+{
+  'f\xF6o': '\u2665',
+  'b\xE5r': '\uD834\uDF06 baz'
+}
+```
+
+For valid JSON output, use the `-j`/`--json` option:
+
+```bash
+$ jsesc --json --pretty '{ "föo": "♥", "bår": "𝌆 baz" }'
+{
+  "f\u00F6o": "\u2665",
+  "b\u00E5r": "\uD834\uDF06 baz"
+}
+```
+
+Read a local JSON file, escape any non-ASCII symbols, and save the result to a new file:
+
+```bash
+$ jsesc --json --object < data-raw.json > data-escaped.json
+```
+
+Or do the same with an online JSON file:
+
+```bash
+$ curl -sL "http://git.io/aorKgQ" | jsesc --json --object > data-escaped.json
+```
+
+See `jsesc --help` for the full list of options.
+
+## Support
+
+As of v3.0.0, jsesc supports Node.js v6+ only.
+
+Older versions (up to jsesc v1.3.0) support Chrome 27, Firefox 3, Safari 4, Opera 10, IE 6, Node.js v6.0.0, Narwhal 0.3.2, RingoJS 0.8-0.11, PhantomJS 1.9.0, and Rhino 1.7RC4. **Note:** Using the `json` option on objects or arrays that contain non-string values relies on `JSON.parse()`. For legacy environments like IE ≤ 7, use [a `JSON` polyfill](https://bestiejs.github.io/json3/).
+
+## Author
+
+| [![twitter/mathias](https://gravatar.com/avatar/24e08a9ea84deb17ae121074d0f17125?s=70)](https://twitter.com/mathias "Follow @mathias on Twitter") |
+|---|
+| [Mathias Bynens](https://mathiasbynens.be/) |
+
+## License
+
+This library is available under the [MIT](https://mths.be/mit) license.
