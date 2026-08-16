@@ -1,422 +1,282 @@
-# jsesc
+# JSON5 – JSON for Humans
 
-Given some data, _jsesc_ returns a stringified representation of that data. jsesc is similar to `JSON.stringify()` except:
+[![Build Status](https://app.travis-ci.com/json5/json5.svg?branch=main)][Build
+Status] [![Coverage
+Status](https://coveralls.io/repos/github/json5/json5/badge.svg)][Coverage
+Status]
 
-1. it outputs JavaScript instead of JSON [by default](#json), enabling support for data structures like ES6 maps and sets;
-2. it offers [many options](#api) to customize the output;
-3. its output is ASCII-safe [by default](#minimal), thanks to its use of [escape sequences](https://mathiasbynens.be/notes/javascript-escapes) where needed.
+JSON5 is an extension to the popular [JSON] file format that aims to be
+easier to **write and maintain _by hand_ (e.g. for config files)**.
+It is _not intended_ to be used for machine-to-machine communication.
+(Keep using JSON or other file formats for that. 🙂)
 
-For any input, jsesc generates the shortest possible valid printable-ASCII-only output. [Here’s an online demo.](https://mothereff.in/js-escapes)
+JSON5 was started in 2012, and as of 2022, now gets **[>65M downloads/week](https://www.npmjs.com/package/json5)**,
+ranks in the **[top 0.1%](https://gist.github.com/anvaka/8e8fa57c7ee1350e3491)** of the most depended-upon packages on npm,
+and has been adopted by major projects like
+**[Chromium](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/runtime_enabled_features.json5;drc=5de823b36e68fd99009a29281b17bc3a1d6b329c),
+[Next.js](https://github.com/vercel/next.js/blob/b88f20c90bf4659b8ad5cb2a27956005eac2c7e8/packages/next/lib/find-config.ts#L43-L46),
+[Babel](https://babeljs.io/docs/en/config-files#supported-file-extensions),
+[Retool](https://community.retool.com/t/i-am-attempting-to-append-several-text-fields-to-a-google-sheet-but-receiving-a-json5-invalid-character-error/7626),
+[WebStorm](https://www.jetbrains.com/help/webstorm/json.html),
+and [more](https://github.com/json5/json5/wiki/In-the-Wild)**.
+It's also natively supported on **[Apple platforms](https://developer.apple.com/documentation/foundation/jsondecoder/3766916-allowsjson5)**
+like **MacOS** and **iOS**.
 
-jsesc’s output can be used instead of `JSON.stringify`’s to avoid [mojibake](https://en.wikipedia.org/wiki/Mojibake) and other encoding issues, or even to [avoid errors](https://twitter.com/annevk/status/380000829643571200) when passing JSON-formatted data (which may contain U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR, or [lone surrogates](https://esdiscuss.org/topic/code-points-vs-unicode-scalar-values#content-14)) to a JavaScript parser or an UTF-8 encoder.
+Formally, the **[JSON5 Data Interchange Format](https://spec.json5.org/)** is a superset of JSON
+(so valid JSON files will always be valid JSON5 files)
+that expands its syntax to include some productions from [ECMAScript 5.1] (ES5).
+It's also a strict _subset_ of ES5, so valid JSON5 files will always be valid ES5.
 
-## Installation
+This JavaScript library is a reference implementation for JSON5 parsing and serialization,
+and is directly used in many of the popular projects mentioned above
+(where e.g. extreme performance isn't necessary),
+but others have created [many other libraries](https://github.com/json5/json5/wiki/In-the-Wild)
+across many other platforms.
 
-Via [npm](https://www.npmjs.com/):
+[Build Status]: https://app.travis-ci.com/json5/json5
 
-```bash
-npm install jsesc
-```
+[Coverage Status]: https://coveralls.io/github/json5/json5
 
-In [Node.js](https://nodejs.org/):
+[JSON]: https://tools.ietf.org/html/rfc7159
+
+[ECMAScript 5.1]: https://www.ecma-international.org/ecma-262/5.1/
+
+## Summary of Features
+The following ECMAScript 5.1 features, which are not supported in JSON, have
+been extended to JSON5.
+
+### Objects
+- Object keys may be an ECMAScript 5.1 _[IdentifierName]_.
+- Objects may have a single trailing comma.
+
+### Arrays
+- Arrays may have a single trailing comma.
+
+### Strings
+- Strings may be single quoted.
+- Strings may span multiple lines by escaping new line characters.
+- Strings may include character escapes.
+
+### Numbers
+- Numbers may be hexadecimal.
+- Numbers may have a leading or trailing decimal point.
+- Numbers may be [IEEE 754] positive infinity, negative infinity, and NaN.
+- Numbers may begin with an explicit plus sign.
+
+### Comments
+- Single and multi-line comments are allowed.
+
+### White Space
+- Additional white space characters are allowed.
+
+[IdentifierName]: https://www.ecma-international.org/ecma-262/5.1/#sec-7.6
+
+[IEEE 754]: http://ieeexplore.ieee.org/servlet/opac?punumber=4610933
+
+## Example
+Kitchen-sink example:
 
 ```js
-const jsesc = require('jsesc');
+{
+  // comments
+  unquoted: 'and you can quote me on that',
+  singleQuotes: 'I can use "double quotes" here',
+  lineBreaks: "Look, Mom! \
+No \\n's!",
+  hexadecimal: 0xdecaf,
+  leadingDecimalPoint: .8675309, andTrailing: 8675309.,
+  positiveSign: +1,
+  trailingComma: 'in objects', andIn: ['arrays',],
+  "backwardsCompatible": "with JSON",
+}
+```
+
+A more real-world example is [this config file](https://github.com/chromium/chromium/blob/feb3c9f670515edf9a88f185301cbd7794ee3e52/third_party/blink/renderer/platform/runtime_enabled_features.json5)
+from the Chromium/Blink project.
+
+## Specification
+For a detailed explanation of the JSON5 format, please read the [official
+specification](https://json5.github.io/json5-spec/).
+
+## Installation and Usage
+### Node.js
+```sh
+npm install json5
+```
+
+#### CommonJS
+```js
+const JSON5 = require('json5')
+```
+
+#### Modules
+```js
+import JSON5 from 'json5'
+```
+
+### Browsers
+#### UMD
+```html
+<!-- This will create a global `JSON5` variable. -->
+<script src="https://unpkg.com/json5@2/dist/index.min.js"></script>
+```
+
+#### Modules
+```html
+<script type="module">
+  import JSON5 from 'https://unpkg.com/json5@2/dist/index.min.mjs'
+</script>
 ```
 
 ## API
+The JSON5 API is compatible with the [JSON API].
 
-### `jsesc(value, options)`
+[JSON API]:
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON
 
-This function takes a value and returns an escaped version of the value where any characters that are not printable ASCII symbols are escaped using the shortest possible (but valid) [escape sequences for use in JavaScript strings](https://mathiasbynens.be/notes/javascript-escapes). The first supported value type is strings:
+### JSON5.parse()
+Parses a JSON5 string, constructing the JavaScript value or object described by
+the string. An optional reviver function can be provided to perform a
+transformation on the resulting object before it is returned.
 
-```js
-jsesc('Ich ♥ Bücher');
-// → 'Ich \\u2665 B\\xFCcher'
+#### Syntax
+    JSON5.parse(text[, reviver])
 
-jsesc('foo 𝌆 bar');
-// → 'foo \\uD834\\uDF06 bar'
-```
+#### Parameters
+- `text`: The string to parse as JSON5.
+- `reviver`: If a function, this prescribes how the value originally produced by
+  parsing is transformed, before being returned.
 
-Instead of a string, the `value` can also be an array, an object, a map, a set, or a buffer. In such cases, `jsesc` returns a stringified version of the value where any characters that are not printable ASCII symbols are escaped in the same way.
+#### Return value
+The object corresponding to the given JSON5 text.
 
-```js
-// Escaping an array
-jsesc([
-  'Ich ♥ Bücher', 'foo 𝌆 bar'
-]);
-// → '[\'Ich \\u2665 B\\xFCcher\',\'foo \\uD834\\uDF06 bar\']'
+### JSON5.stringify()
+Converts a JavaScript value to a JSON5 string, optionally replacing values if a
+replacer function is specified, or optionally including only the specified
+properties if a replacer array is specified.
 
-// Escaping an object
-jsesc({
-  'Ich ♥ Bücher': 'foo 𝌆 bar'
-});
-// → '{\'Ich \\u2665 B\\xFCcher\':\'foo \\uD834\\uDF06 bar\'}'
-```
+#### Syntax
+    JSON5.stringify(value[, replacer[, space]])
+    JSON5.stringify(value[, options])
 
-The optional `options` argument accepts an object with the following options:
+#### Parameters
+- `value`: The value to convert to a JSON5 string.
+- `replacer`: A function that alters the behavior of the stringification
+  process, or an array of String and Number objects that serve as a whitelist
+  for selecting/filtering the properties of the value object to be included in
+  the JSON5 string. If this value is null or not provided, all properties of the
+  object are included in the resulting JSON5 string.
+- `space`: A String or Number object that's used to insert white space into the
+  output JSON5 string for readability purposes. If this is a Number, it
+  indicates the number of space characters to use as white space; this number is
+  capped at 10 (if it is greater, the value is just 10). Values less than 1
+  indicate that no space should be used. If this is a String, the string (or the
+  first 10 characters of the string, if it's longer than that) is used as white
+  space. If this parameter is not provided (or is null), no white space is used.
+  If white space is used, trailing commas will be used in objects and arrays.
+- `options`: An object with the following properties:
+  - `replacer`: Same as the `replacer` parameter.
+  - `space`: Same as the `space` parameter.
+  - `quote`: A String representing the quote character to use when serializing
+    strings.
 
-#### `quotes`
+#### Return value
+A JSON5 string representing the value.
 
-The default value for the `quotes` option is `'single'`. This means that any occurrences of `'` in the input string are escaped as `\'`, so that the output can be used in a string literal wrapped in single quotes.
-
-```js
-jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.');
-// → 'Lorem ipsum "dolor" sit \\\'amet\\\' etc.'
-
-jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
-  'quotes': 'single'
-});
-// → '`Lorem` ipsum "dolor" sit \\\'amet\\\' etc.'
-// → "`Lorem` ipsum \"dolor\" sit \\'amet\\' etc."
-```
-
-If you want to use the output as part of a string literal wrapped in double quotes, set the `quotes` option to `'double'`.
-
-```js
-jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
-  'quotes': 'double'
-});
-// → '`Lorem` ipsum \\"dolor\\" sit \'amet\' etc.'
-// → "`Lorem` ipsum \\\"dolor\\\" sit 'amet' etc."
-```
-
-If you want to use the output as part of a template literal (i.e. wrapped in backticks), set the `quotes` option to `'backtick'`.
-
-```js
-jsesc('`Lorem` ipsum "dolor" sit \'amet\' etc.', {
-  'quotes': 'backtick'
-});
-// → '\\`Lorem\\` ipsum "dolor" sit \'amet\' etc.'
-// → "\\`Lorem\\` ipsum \"dolor\" sit 'amet' etc."
-// → `\\\`Lorem\\\` ipsum "dolor" sit 'amet' etc.`
-```
-
-This setting also affects the output for arrays and objects:
+### Node.js `require()` JSON5 files
+When using Node.js, you can `require()` JSON5 files by adding the following
+statement.
 
 ```js
-jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
-  'quotes': 'double'
-});
-// → '{"Ich \\u2665 B\\xFCcher":"foo \\uD834\\uDF06 bar"}'
-
-jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
-  'quotes': 'double'
-});
-// → '["Ich \\u2665 B\\xFCcher","foo \\uD834\\uDF06 bar"]'
+require('json5/lib/register')
 ```
 
-#### `numbers`
-
-The default value for the `numbers` option is `'decimal'`. This means that any numeric values are represented using decimal integer literals. Other valid options are `binary`, `octal`, and `hexadecimal`, which result in binary integer literals, octal integer literals, and hexadecimal integer literals, respectively.
+Then you can load a JSON5 file with a Node.js `require()` statement. For
+example:
 
 ```js
-jsesc(42, {
-  'numbers': 'binary'
-});
-// → '0b101010'
-
-jsesc(42, {
-  'numbers': 'octal'
-});
-// → '0o52'
-
-jsesc(42, {
-  'numbers': 'decimal'
-});
-// → '42'
-
-jsesc(42, {
-  'numbers': 'hexadecimal'
-});
-// → '0x2A'
+const config = require('./config.json5')
 ```
 
-#### `wrap`
+## CLI
+Since JSON is more widely used than JSON5, this package includes a CLI for
+converting JSON5 to JSON and for validating the syntax of JSON5 documents.
 
-The `wrap` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, the output is a valid JavaScript string literal wrapped in quotes. The type of quotes can be specified through the `quotes` setting.
-
-```js
-jsesc('Lorem ipsum "dolor" sit \'amet\' etc.', {
-  'quotes': 'single',
-  'wrap': true
-});
-// → '\'Lorem ipsum "dolor" sit \\\'amet\\\' etc.\''
-// → "\'Lorem ipsum \"dolor\" sit \\\'amet\\\' etc.\'"
-
-jsesc('Lorem ipsum "dolor" sit \'amet\' etc.', {
-  'quotes': 'double',
-  'wrap': true
-});
-// → '"Lorem ipsum \\"dolor\\" sit \'amet\' etc."'
-// → "\"Lorem ipsum \\\"dolor\\\" sit \'amet\' etc.\""
+### Installation
+```sh
+npm install --global json5
 ```
 
-#### `es6`
-
-The `es6` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, any astral Unicode symbols in the input are escaped using [ECMAScript 6 Unicode code point escape sequences](https://mathiasbynens.be/notes/javascript-escapes#unicode-code-point) instead of using separate escape sequences for each surrogate half. If backwards compatibility with ES5 environments is a concern, don’t enable this setting. If the `json` setting is enabled, the value for the `es6` setting is ignored (as if it was `false`).
-
-```js
-// By default, the `es6` option is disabled:
-jsesc('foo 𝌆 bar 💩 baz');
-// → 'foo \\uD834\\uDF06 bar \\uD83D\\uDCA9 baz'
-
-// To explicitly disable it:
-jsesc('foo 𝌆 bar 💩 baz', {
-  'es6': false
-});
-// → 'foo \\uD834\\uDF06 bar \\uD83D\\uDCA9 baz'
-
-// To enable it:
-jsesc('foo 𝌆 bar 💩 baz', {
-  'es6': true
-});
-// → 'foo \\u{1D306} bar \\u{1F4A9} baz'
+### Usage
+```sh
+json5 [options] <file>
 ```
 
-#### `escapeEverything`
+If `<file>` is not provided, then STDIN is used.
 
-The `escapeEverything` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, all the symbols in the output are escaped — even printable ASCII symbols.
+#### Options:
+- `-s`, `--space`: The number of spaces to indent or `t` for tabs
+- `-o`, `--out-file [file]`: Output to the specified file, otherwise STDOUT
+- `-v`, `--validate`: Validate JSON5 but do not output JSON
+- `-V`, `--version`: Output the version number
+- `-h`, `--help`: Output usage information
 
-```js
-jsesc('lolwat"foo\'bar', {
-  'escapeEverything': true
-});
-// → '\\x6C\\x6F\\x6C\\x77\\x61\\x74\\"\\x66\\x6F\\x6F\\\'\\x62\\x61\\x72'
-// → "\\x6C\\x6F\\x6C\\x77\\x61\\x74\\\"\\x66\\x6F\\x6F\\'\\x62\\x61\\x72"
+## Contributing
+### Development
+```sh
+git clone https://github.com/json5/json5
+cd json5
+npm install
 ```
 
-This setting also affects the output for string literals within arrays and objects.
+When contributing code, please write relevant tests and run `npm test` and `npm
+run lint` before submitting pull requests. Please use an editor that supports
+[EditorConfig](http://editorconfig.org/).
 
-#### `minimal`
+### Issues
+To report bugs or request features regarding the JSON5 **data format**,
+please submit an issue to the official
+**[_specification_ repository](https://github.com/json5/json5-spec)**.
 
-The `minimal` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, only a limited set of symbols in the output are escaped:
+Note that we will never add any features that make JSON5 incompatible with ES5;
+that compatibility is a fundamental premise of JSON5.
 
-* U+0000 `\0`
-* U+0008 `\b`
-* U+0009 `\t`
-* U+000A `\n`
-* U+000C `\f`
-* U+000D `\r`
-* U+005C `\\`
-* U+2028 `\u2028`
-* U+2029 `\u2029`
-* whatever symbol is being used for wrapping string literals (based on [the `quotes` option](#quotes))
-* [lone surrogates](https://esdiscuss.org/topic/code-points-vs-unicode-scalar-values#content-14)
+To report bugs or request features regarding this **JavaScript implementation**
+of JSON5, please submit an issue to **_this_ repository**.
 
-Note: with this option enabled, jsesc output is no longer guaranteed to be ASCII-safe.
-
-```js
-jsesc('foo\u2029bar\nbaz©qux𝌆flops', {
-  'minimal': false
-});
-// → 'foo\\u2029bar\\nbaz©qux𝌆flops'
-```
-
-#### `isScriptContext`
-
-The `isScriptContext` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, occurrences of [`</script` and `</style`](https://mathiasbynens.be/notes/etago) in the output are escaped as `<\/script` and `<\/style`, and [`<!--`](https://mathiasbynens.be/notes/etago#comment-8) is escaped as `\x3C!--` (or `\u003C!--` when the `json` option is enabled). This setting is useful when jsesc’s output ends up as part of a `<script>` or `<style>` element in an HTML document.
-
-```js
-jsesc('foo</script>bar', {
-  'isScriptContext': true
-});
-// → 'foo<\\/script>bar'
-```
-
-#### `compact`
-
-The `compact` option takes a boolean value (`true` or `false`), and defaults to `true` (enabled). When enabled, the output for arrays and objects is as compact as possible; it’s not formatted nicely.
-
-```js
-jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
-  'compact': true // this is the default
-});
-// → '{\'Ich \u2665 B\xFCcher\':\'foo \uD834\uDF06 bar\'}'
-
-jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
-  'compact': false
-});
-// → '{\n\t\'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
-
-jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
-  'compact': false
-});
-// → '[\n\t\'Ich \u2665 B\xFCcher\',\n\t\'foo \uD834\uDF06 bar\'\n]'
-```
-
-This setting has no effect on the output for strings.
-
-#### `indent`
-
-The `indent` option takes a string value, and defaults to `'\t'`. When the `compact` setting is disabled (`false`), the value of the `indent` option is used to format the output for arrays and objects.
-
-```js
-jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
-  'compact': false,
-  'indent': '\t' // this is the default
-});
-// → '{\n\t\'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
-
-jsesc({ 'Ich ♥ Bücher': 'foo 𝌆 bar' }, {
-  'compact': false,
-  'indent': '  '
-});
-// → '{\n  \'Ich \u2665 B\xFCcher\': \'foo \uD834\uDF06 bar\'\n}'
-
-jsesc([ 'Ich ♥ Bücher', 'foo 𝌆 bar' ], {
-  'compact': false,
-  'indent': '  '
-});
-// → '[\n  \'Ich \u2665 B\xFCcher\',\n\  t\'foo \uD834\uDF06 bar\'\n]'
-```
-
-This setting has no effect on the output for strings.
-
-#### `indentLevel`
-
-The `indentLevel` option takes a numeric value, and defaults to `0`. It represents the current indentation level, i.e. the number of times the value of [the `indent` option](#indent) is repeated.
-
-```js
-jsesc(['a', 'b', 'c'], {
-  'compact': false,
-  'indentLevel': 1
-});
-// → '[\n\t\t\'a\',\n\t\t\'b\',\n\t\t\'c\'\n\t]'
-
-jsesc(['a', 'b', 'c'], {
-  'compact': false,
-  'indentLevel': 2
-});
-// → '[\n\t\t\t\'a\',\n\t\t\t\'b\',\n\t\t\t\'c\'\n\t\t]'
-```
-
-#### `json`
-
-The `json` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, the output is valid JSON. [Hexadecimal character escape sequences](https://mathiasbynens.be/notes/javascript-escapes#hexadecimal) and [the `\v` or `\0` escape sequences](https://mathiasbynens.be/notes/javascript-escapes#single) are not used. Setting `json: true` implies `quotes: 'double', wrap: true, es6: false`, although these values can still be overridden if needed — but in such cases, the output won’t be valid JSON anymore.
-
-```js
-jsesc('foo\x00bar\xFF\uFFFDbaz', {
-  'json': true
-});
-// → '"foo\\u0000bar\\u00FF\\uFFFDbaz"'
-
-jsesc({ 'foo\x00bar\xFF\uFFFDbaz': 'foo\x00bar\xFF\uFFFDbaz' }, {
-  'json': true
-});
-// → '{"foo\\u0000bar\\u00FF\\uFFFDbaz":"foo\\u0000bar\\u00FF\\uFFFDbaz"}'
-
-jsesc([ 'foo\x00bar\xFF\uFFFDbaz', 'foo\x00bar\xFF\uFFFDbaz' ], {
-  'json': true
-});
-// → '["foo\\u0000bar\\u00FF\\uFFFDbaz","foo\\u0000bar\\u00FF\\uFFFDbaz"]'
-
-// Values that are acceptable in JSON but aren’t strings, arrays, or object
-// literals can’t be escaped, so they’ll just be preserved:
-jsesc([ 'foo\x00bar', [1, '©', { 'foo': true, 'qux': null }], 42 ], {
-  'json': true
-});
-// → '["foo\\u0000bar",[1,"\\u00A9",{"foo":true,"qux":null}],42]'
-// Values that aren’t allowed in JSON are run through `JSON.stringify()`:
-jsesc([ undefined, -Infinity ], {
-  'json': true
-});
-// → '[null,null]'
-```
-
-**Note:** Using this option on objects or arrays that contain non-string values relies on `JSON.stringify()`. For legacy environments like IE ≤ 7, use [a `JSON` polyfill](http://bestiejs.github.io/json3/).
-
-#### `lowercaseHex`
-
-The `lowercaseHex` option takes a boolean value (`true` or `false`), and defaults to `false` (disabled). When enabled, any alphabetical hexadecimal digits in escape sequences as well as any hexadecimal integer literals (see [the `numbers` option](#numbers)) in the output are in lowercase.
-
-```js
-jsesc('Ich ♥ Bücher', {
-  'lowercaseHex': true
-});
-// → 'Ich \\u2665 B\\xfccher'
-//                    ^^
-
-jsesc(42, {
-  'numbers': 'hexadecimal',
-  'lowercaseHex': true
-});
-// → '0x2a'
-//      ^^
-```
-
-### `jsesc.version`
-
-A string representing the semantic version number.
-
-### Using the `jsesc` binary
-
-To use the `jsesc` binary in your shell, simply install jsesc globally using npm:
-
-```bash
-npm install -g jsesc
-```
-
-After that you’re able to escape strings from the command line:
-
-```bash
-$ jsesc 'föo ♥ bår 𝌆 baz'
-f\xF6o \u2665 b\xE5r \uD834\uDF06 baz
-```
-
-To escape arrays or objects containing string values, use the `-o`/`--object` option:
-
-```bash
-$ jsesc --object '{ "föo": "♥", "bår": "𝌆 baz" }'
-{'f\xF6o':'\u2665','b\xE5r':'\uD834\uDF06 baz'}
-```
-
-To prettify the output in such cases, use the `-p`/`--pretty` option:
-
-```bash
-$ jsesc --pretty '{ "föo": "♥", "bår": "𝌆 baz" }'
-{
-  'f\xF6o': '\u2665',
-  'b\xE5r': '\uD834\uDF06 baz'
-}
-```
-
-For valid JSON output, use the `-j`/`--json` option:
-
-```bash
-$ jsesc --json --pretty '{ "föo": "♥", "bår": "𝌆 baz" }'
-{
-  "f\u00F6o": "\u2665",
-  "b\u00E5r": "\uD834\uDF06 baz"
-}
-```
-
-Read a local JSON file, escape any non-ASCII symbols, and save the result to a new file:
-
-```bash
-$ jsesc --json --object < data-raw.json > data-escaped.json
-```
-
-Or do the same with an online JSON file:
-
-```bash
-$ curl -sL "http://git.io/aorKgQ" | jsesc --json --object > data-escaped.json
-```
-
-See `jsesc --help` for the full list of options.
-
-## Support
-
-As of v3.0.0, jsesc supports Node.js v6+ only.
-
-Older versions (up to jsesc v1.3.0) support Chrome 27, Firefox 3, Safari 4, Opera 10, IE 6, Node.js v6.0.0, Narwhal 0.3.2, RingoJS 0.8-0.11, PhantomJS 1.9.0, and Rhino 1.7RC4. **Note:** Using the `json` option on objects or arrays that contain non-string values relies on `JSON.parse()`. For legacy environments like IE ≤ 7, use [a `JSON` polyfill](https://bestiejs.github.io/json3/).
-
-## Author
-
-| [![twitter/mathias](https://gravatar.com/avatar/24e08a9ea84deb17ae121074d0f17125?s=70)](https://twitter.com/mathias "Follow @mathias on Twitter") |
-|---|
-| [Mathias Bynens](https://mathiasbynens.be/) |
+### Security Vulnerabilities and Disclosures
+To report a security vulnerability, please follow the follow the guidelines
+described in our [security policy](./SECURITY.md).
 
 ## License
+MIT. See [LICENSE.md](./LICENSE.md) for details.
 
-This library is available under the [MIT](https://mths.be/mit) license.
+## Credits
+[Aseem Kishore](https://github.com/aseemk) founded this project.
+He wrote a [blog post](https://aseemk.substack.com/p/ignore-the-f-ing-haters-json5)
+about the journey and lessons learned 10 years in.
+
+[Michael Bolin](http://bolinfest.com/) independently arrived at and published
+some of these same ideas with awesome explanations and detail. Recommended
+reading: [Suggested Improvements to JSON](http://bolinfest.com/essays/json.html)
+
+[Douglas Crockford](http://www.crockford.com/) of course designed and built
+JSON, but his state machine diagrams on the [JSON website](http://json.org/), as
+cheesy as it may sound, gave us motivation and confidence that building a new
+parser to implement these ideas was within reach! The original
+implementation of JSON5 was also modeled directly off of Doug’s open-source
+[json_parse.js] parser. We’re grateful for that clean and well-documented
+code.
+
+[json_parse.js]:
+https://github.com/douglascrockford/JSON-js/blob/03157639c7a7cddd2e9f032537f346f1a87c0f6d/json_parse.js
+
+[Max Nanasy](https://github.com/MaxNanasy) has been an early and prolific
+supporter, contributing multiple patches and ideas.
+
+[Andrew Eisenberg](https://github.com/aeisenberg) contributed the original
+`stringify` method.
+
+[Jordan Tucker](https://github.com/jordanbtucker) has aligned JSON5 more closely
+with ES5, wrote the official JSON5 specification, completely rewrote the
+codebase from the ground up, and is actively maintaining this project.
