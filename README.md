@@ -1,240 +1,429 @@
-Overview [![Build Status](https://travis-ci.org/lydell/js-tokens.svg?branch=master)](https://travis-ci.org/lydell/js-tokens)
-========
+<h1 align="center">
+	<img width="250" src="https://jaredwray.com/images/keyv.svg" alt="keyv">
+	<br>
+	<br>
+</h1>
 
-A regex that tokenizes JavaScript.
+> Simple key-value storage with support for multiple backends
 
-```js
-var jsTokens = require("js-tokens").default
+[![build](https://github.com/jaredwray/keyv/actions/workflows/tests.yaml/badge.svg)](https://github.com/jaredwray/keyv/actions/workflows/tests.yaml)
+[![codecov](https://codecov.io/gh/jaredwray/keyv/branch/main/graph/badge.svg?token=bRzR3RyOXZ)](https://codecov.io/gh/jaredwray/keyv)
+[![npm](https://img.shields.io/npm/dm/keyv.svg)](https://www.npmjs.com/package/keyv)
+[![npm](https://img.shields.io/npm/v/keyv.svg)](https://www.npmjs.com/package/keyv)
 
-var jsString = "var foo=opts.foo;\n..."
+Keyv provides a consistent interface for key-value storage across multiple backends via storage adapters. It supports TTL based expiry, making it suitable as a cache or a persistent key-value store.
 
-jsString.match(jsTokens)
-// ["var", " ", "foo", "=", "opts", ".", "foo", ";", "\n", ...]
+## Features
+
+There are a few existing modules similar to Keyv, however Keyv is different because it:
+
+- Isn't bloated
+- Has a simple Promise based API
+- Suitable as a TTL based cache or persistent key-value store
+- [Easily embeddable](#add-cache-support-to-your-module) inside another module
+- Works with any storage that implements the [`Map`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) API
+- Handles all JSON types plus `Buffer`
+- Supports namespaces
+- Wide range of [**efficient, well tested**](#official-storage-adapters) storage adapters
+- Connection errors are passed through (db failures won't kill your app)
+- Supports the current active LTS version of Node.js or higher
+
+## Usage
+
+Install Keyv.
+
+```
+npm install --save keyv
 ```
 
+By default everything is stored in memory, you can optionally also install a storage adapter.
 
-Installation
-============
-
-`npm install js-tokens`
-
-```js
-import jsTokens from "js-tokens"
-// or:
-var jsTokens = require("js-tokens").default
+```
+npm install --save @keyv/redis
+npm install --save @keyv/mongo
+npm install --save @keyv/sqlite
+npm install --save @keyv/postgres
+npm install --save @keyv/mysql
+npm install --save @keyv/etcd
 ```
 
-
-Usage
-=====
-
-### `jsTokens` ###
-
-A regex with the `g` flag that matches JavaScript tokens.
-
-The regex _always_ matches, even invalid JavaScript and the empty string.
-
-The next match is always directly after the previous.
-
-### `var token = matchToToken(match)` ###
+Create a new Keyv instance, passing your connection string if applicable. Keyv will automatically load the correct storage adapter.
 
 ```js
-import {matchToToken} from "js-tokens"
-// or:
-var matchToToken = require("js-tokens").matchToToken
+const Keyv = require('keyv');
+
+// One of the following
+const keyv = new Keyv();
+const keyv = new Keyv('redis://user:pass@localhost:6379');
+const keyv = new Keyv('mongodb://user:pass@localhost:27017/dbname');
+const keyv = new Keyv('sqlite://path/to/database.sqlite');
+const keyv = new Keyv('postgresql://user:pass@localhost:5432/dbname');
+const keyv = new Keyv('mysql://user:pass@localhost:3306/dbname');
+const keyv = new Keyv('etcd://localhost:2379');
+
+// Handle DB connection errors
+keyv.on('error', err => console.log('Connection Error', err));
+
+await keyv.set('foo', 'expires in 1 second', 1000); // true
+await keyv.set('foo', 'never expires'); // true
+await keyv.get('foo'); // 'never expires'
+await keyv.delete('foo'); // true
+await keyv.clear(); // undefined
 ```
 
-Takes a `match` returned by `jsTokens.exec(string)`, and returns a `{type:
-String, value: String}` object. The following types are available:
+### Namespaces
 
-- string
-- comment
-- regex
-- number
-- name
-- punctuator
-- whitespace
-- invalid
-
-Multi-line comments and strings also have a `closed` property indicating if the
-token was closed or not (see below).
-
-Comments and strings both come in several flavors. To distinguish them, check if
-the token starts with `//`, `/*`, `'`, `"` or `` ` ``.
-
-Names are ECMAScript IdentifierNames, that is, including both identifiers and
-keywords. You may use [is-keyword-js] to tell them apart.
-
-Whitespace includes both line terminators and other whitespace.
-
-[is-keyword-js]: https://github.com/crissdev/is-keyword-js
-
-
-ECMAScript support
-==================
-
-The intention is to always support the latest ECMAScript version whose feature
-set has been finalized.
-
-If adding support for a newer version requires changes, a new version with a
-major verion bump will be released.
-
-Currently, ECMAScript 2018 is supported.
-
-
-Invalid code handling
-=====================
-
-Unterminated strings are still matched as strings. JavaScript strings cannot
-contain (unescaped) newlines, so unterminated strings simply end at the end of
-the line. Unterminated template strings can contain unescaped newlines, though,
-so they go on to the end of input.
-
-Unterminated multi-line comments are also still matched as comments. They
-simply go on to the end of the input.
-
-Unterminated regex literals are likely matched as division and whatever is
-inside the regex.
-
-Invalid ASCII characters have their own capturing group.
-
-Invalid non-ASCII characters are treated as names, to simplify the matching of
-names (except unicode spaces which are treated as whitespace). Note: See also
-the [ES2018](#es2018) section.
-
-Regex literals may contain invalid regex syntax. They are still matched as
-regex literals. They may also contain repeated regex flags, to keep the regex
-simple.
-
-Strings may contain invalid escape sequences.
-
-
-Limitations
-===========
-
-Tokenizing JavaScript using regexes—in fact, _one single regex_—won’t be
-perfect. But that’s not the point either.
-
-You may compare jsTokens with [esprima] by using `esprima-compare.js`.
-See `npm run esprima-compare`!
-
-[esprima]: http://esprima.org/
-
-### Template string interpolation ###
-
-Template strings are matched as single tokens, from the starting `` ` `` to the
-ending `` ` ``, including interpolations (whose tokens are not matched
-individually).
-
-Matching template string interpolations requires recursive balancing of `{` and
-`}`—something that JavaScript regexes cannot do. Only one level of nesting is
-supported.
-
-### Division and regex literals collision ###
-
-Consider this example:
+You can namespace your Keyv instance to avoid key collisions and allow you to clear only a certain namespace while using the same database.
 
 ```js
-var g = 9.82
-var number = bar / 2/g
+const users = new Keyv('redis://user:pass@localhost:6379', { namespace: 'users' });
+const cache = new Keyv('redis://user:pass@localhost:6379', { namespace: 'cache' });
 
-var regex = / 2/g
+await users.set('foo', 'users'); // true
+await cache.set('foo', 'cache'); // true
+await users.get('foo'); // 'users'
+await cache.get('foo'); // 'cache'
+await users.clear(); // undefined
+await users.get('foo'); // undefined
+await cache.get('foo'); // 'cache'
 ```
 
-A human can easily understand that in the `number` line we’re dealing with
-division, and in the `regex` line we’re dealing with a regex literal. How come?
-Because humans can look at the whole code to put the `/` characters in context.
-A JavaScript regex cannot. It only sees forwards. (Well, ES2018 regexes can also
-look backwards. See the [ES2018](#es2018) section).
+### Custom Serializers
 
-When the `jsTokens` regex scans throught the above, it will see the following
-at the end of both the `number` and `regex` rows:
+Keyv uses [`json-buffer`](https://github.com/dominictarr/json-buffer) for data serialization to ensure consistency across different backends.
+
+You can optionally provide your own serialization functions to support extra data types or to serialize to something other than JSON.
 
 ```js
-/ 2/g
+const keyv = new Keyv({ serialize: JSON.stringify, deserialize: JSON.parse });
 ```
 
-It is then impossible to know if that is a regex literal, or part of an
-expression dealing with division.
+**Warning:** Using custom serializers means you lose any guarantee of data consistency. You should do extensive testing with your serialisation functions and chosen storage engine.
 
-Here is a similar case:
+## Official Storage Adapters
+
+The official storage adapters are covered by [over 150 integration tests](https://github.com/jaredwray/keyv/actions/workflows/tests.yaml) to guarantee consistent behaviour. They are lightweight, efficient wrappers over the DB clients making use of indexes and native TTLs where available.
+
+Database | Adapter | Native TTL
+---|---|---
+Redis | [@keyv/redis](https://github.com/jaredwray/keyv/tree/master/packages/redis) | Yes
+MongoDB | [@keyv/mongo](https://github.com/jaredwray/keyv/tree/master/packages/mongo) | Yes 
+SQLite | [@keyv/sqlite](https://github.com/jaredwray/keyv/tree/master/packages/sqlite) | No 
+PostgreSQL | [@keyv/postgres](https://github.com/jaredwray/keyv/tree/master/packages/postgres) | No 
+MySQL | [@keyv/mysql](https://github.com/jaredwray/keyv/tree/master/packages/mysql) | No 
+Etcd | [@keyv/etcd](https://github.com/jaredwray/keyv/tree/master/packages/etcd) | Yes
+Memcache | [@keyv/memcache](https://github.com/jaredwray/keyv/tree/master/packages/memcache) | Yes
+
+## Third-party Storage Adapters
+
+You can also use third-party storage adapters or build your own. Keyv will wrap these storage adapters in TTL functionality and handle complex types internally.
 
 ```js
-foo /= 2/g
-foo(/= 2/g)
+const Keyv = require('keyv');
+const myAdapter = require('./my-storage-adapter');
+
+const keyv = new Keyv({ store: myAdapter });
 ```
 
-The first line divides the `foo` variable with `2/g`. The second line calls the
-`foo` function with the regex literal `/= 2/g`. Again, since `jsTokens` only
-sees forwards, it cannot tell the two cases apart.
-
-There are some cases where we _can_ tell division and regex literals apart,
-though.
-
-First off, we have the simple cases where there’s only one slash in the line:
+Any store that follows the [`Map`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map) api will work.
 
 ```js
-var foo = 2/g
-foo /= 2
+new Keyv({ store: new Map() });
 ```
 
-Regex literals cannot contain newlines, so the above cases are correctly
-identified as division. Things are only problematic when there are more than
-one non-comment slash in a single line.
-
-Secondly, not every character is a valid regex flag.
+For example, [`quick-lru`](https://github.com/sindresorhus/quick-lru) is a completely unrelated module that implements the Map API.
 
 ```js
-var number = bar / 2/e
+const Keyv = require('keyv');
+const QuickLRU = require('quick-lru');
+
+const lru = new QuickLRU({ maxSize: 1000 });
+const keyv = new Keyv({ store: lru });
 ```
 
-The above example is also correctly identified as division, because `e` is not a
-valid regex flag. I initially wanted to future-proof by allowing `[a-zA-Z]*`
-(any letter) as flags, but it is not worth it since it increases the amount of
-ambigous cases. So only the standard `g`, `m`, `i`, `y` and `u` flags are
-allowed. This means that the above example will be identified as division as
-long as you don’t rename the `e` variable to some permutation of `gmiyus` 1 to 6
-characters long.
+The following are third-party storage adapters compatible with Keyv:
 
-Lastly, we can look _forward_ for information.
+- [quick-lru](https://github.com/sindresorhus/quick-lru) - Simple "Least Recently Used" (LRU) cache
+- [keyv-file](https://github.com/zaaack/keyv-file) - File system storage adapter for Keyv
+- [keyv-dynamodb](https://www.npmjs.com/package/keyv-dynamodb) - DynamoDB storage adapter for Keyv
+- [keyv-lru](https://www.npmjs.com/package/keyv-lru) - LRU storage adapter for Keyv
+- [keyv-null](https://www.npmjs.com/package/keyv-null) - Null storage adapter for Keyv
+- [keyv-firestore ](https://github.com/goto-bus-stop/keyv-firestore) – Firebase Cloud Firestore adapter for Keyv
+- [keyv-mssql](https://github.com/pmorgan3/keyv-mssql) - Microsoft Sql Server adapter for Keyv
+- [keyv-azuretable](https://github.com/howlowck/keyv-azuretable) - Azure Table Storage/API adapter for Keyv
+- [keyv-arango](https://github.com/TimMikeladze/keyv-arango) - ArangoDB storage adapter for Keyv
+- [keyv-momento](https://github.com/momentohq/node-keyv-adaptor/) - Momento storage adapter for Keyv
 
-- If the token following what looks like a regex literal is not valid after a
-  regex literal, but is valid in a division expression, then the regex literal
-  is treated as division instead. For example, a flagless regex cannot be
-  followed by a string, number or name, but all of those three can be the
-  denominator of a division.
-- Generally, if what looks like a regex literal is followed by an operator, the
-  regex literal is treated as division instead. This is because regexes are
-  seldomly used with operators (such as `+`, `*`, `&&` and `==`), but division
-  could likely be part of such an expression.
+## Add Cache Support to your Module
 
-Please consult the regex source and the test cases for precise information on
-when regex or division is matched (should you need to know). In short, you
-could sum it up as:
+Keyv is designed to be easily embedded into other modules to add cache support. The recommended pattern is to expose a `cache` option in your modules options which is passed through to Keyv. Caching will work in memory by default and users have the option to also install a Keyv storage adapter and pass in a connection string, or any other storage that implements the `Map` API.
 
-If the end of a statement looks like a regex literal (even if it isn’t), it
-will be treated as one. Otherwise it should work as expected (if you write sane
-code).
+You should also set a namespace for your module so you can safely call `.clear()` without clearing unrelated app data.
 
-### ES2018 ###
+Inside your module:
 
-ES2018 added some nice regex improvements to the language.
+```js
+class AwesomeModule {
+	constructor(opts) {
+		this.cache = new Keyv({
+			uri: typeof opts.cache === 'string' && opts.cache,
+			store: typeof opts.cache !== 'string' && opts.cache,
+			namespace: 'awesome-module'
+		});
+	}
+}
+```
 
-- [Unicode property escapes] should allow telling names and invalid non-ASCII
-  characters apart without blowing up the regex size.
-- [Lookbehind assertions] should allow matching telling division and regex
-  literals apart in more cases.
-- [Named capture groups] might simplify some things.
+Now it can be consumed like this:
 
-These things would be nice to do, but are not critical. They probably have to
-wait until the oldest maintained Node.js LTS release supports those features.
+```js
+const AwesomeModule = require('awesome-module');
 
-[Unicode property escapes]: http://2ality.com/2017/07/regexp-unicode-property-escapes.html
-[Lookbehind assertions]: http://2ality.com/2017/05/regexp-lookbehind-assertions.html
-[Named capture groups]: http://2ality.com/2017/05/regexp-named-capture-groups.html
+// Caches stuff in memory by default
+const awesomeModule = new AwesomeModule();
 
+// After npm install --save keyv-redis
+const awesomeModule = new AwesomeModule({ cache: 'redis://localhost' });
 
-License
-=======
+// Some third-party module that implements the Map API
+const awesomeModule = new AwesomeModule({ cache: some3rdPartyStore });
+```
 
-[MIT](LICENSE).
+## Compression
+
+Keyv supports `gzip` and `brotli` compression. To enable compression, pass the `compress` option to the constructor.
+
+```js
+const KeyvGzip = require('@keyv/compress-gzip');
+const Keyv = require('keyv');
+
+const keyvGzip = new KeyvGzip();
+const keyv = new Keyv({ compression: KeyvGzip });
+```
+
+You can also pass a custom compression function to the `compression` option. Following the pattern of the official compression adapters.
+
+### Want to build your own? 
+
+Great! Keyv is designed to be easily extended. You can build your own compression adapter by following the pattern of the official compression adapters based on this interface:
+
+```typescript
+interface CompressionAdapter {
+	async compress(value: any, options?: any);
+	async decompress(value: any, options?: any);
+	async serialize(value: any);
+	async deserialize(value: any);
+}
+```
+
+In addition to the interface, you can test it with our compression test suite using @keyv/test-suite:
+
+```js
+const {keyvCompresstionTests} = require('@keyv/test-suite');
+const KeyvGzip = require('@keyv/compress-gzip');
+
+keyvCompresstionTests(test, new KeyvGzip());
+```
+
+## API
+
+### new Keyv([uri], [options])
+
+Returns a new Keyv instance.
+
+The Keyv instance is also an `EventEmitter` that will emit an `'error'` event if the storage adapter connection fails.
+
+### uri
+
+Type: `String`<br>
+Default: `undefined`
+
+The connection string URI.
+
+Merged into the options object as options.uri.
+
+### options
+
+Type: `Object`
+
+The options object is also passed through to the storage adapter. Check your storage adapter docs for any extra options.
+
+#### options.namespace
+
+Type: `String`<br>
+Default: `'keyv'`
+
+Namespace for the current instance.
+
+#### options.ttl
+
+Type: `Number`<br>
+Default: `undefined`
+
+Default TTL. Can be overridden by specififying a TTL on `.set()`.
+
+#### options.compression
+
+Type: `@keyv/compress-<compression_package_name>`<br>
+Default: `undefined`
+
+Compression package to use. See [Compression](#compression) for more details.
+
+#### options.serialize
+
+Type: `Function`<br>
+Default: `JSONB.stringify`
+
+A custom serialization function.
+
+#### options.deserialize
+
+Type: `Function`<br>
+Default: `JSONB.parse`
+
+A custom deserialization function.
+
+#### options.store
+
+Type: `Storage adapter instance`<br>
+Default: `new Map()`
+
+The storage adapter instance to be used by Keyv.
+
+#### options.adapter
+
+Type: `String`<br>
+Default: `undefined`
+
+Specify an adapter to use. e.g `'redis'` or `'mongodb'`.
+
+### Instance
+
+Keys must always be strings. Values can be of any type.
+
+#### .set(key, value, [ttl])
+
+Set a value.
+
+By default keys are persistent. You can set an expiry TTL in milliseconds.
+
+Returns a promise which resolves to `true`.
+
+#### .get(key, [options])
+
+Returns a promise which resolves to the retrieved value.
+
+##### options.raw
+
+Type: `Boolean`<br>
+Default: `false`
+
+If set to true the raw DB object Keyv stores internally will be returned instead of just the value.
+
+This contains the TTL timestamp.
+
+#### .delete(key)
+
+Deletes an entry.
+
+Returns a promise which resolves to `true` if the key existed, `false` if not.
+
+#### .clear()
+
+Delete all entries in the current namespace.
+
+Returns a promise which is resolved when the entries have been cleared.
+
+#### .iterator()
+
+Iterate over all entries of the current namespace.
+
+Returns a iterable that can be iterated by for-of loops. For example:
+
+```js
+// please note that the "await" keyword should be used here
+for await (const [key, value] of this.keyv.iterator()) {
+  console.log(key, value);
+};
+```
+
+# How to Contribute
+
+In this section of the documentation we will cover:
+
+1) How to set up this repository locally
+2) How to get started with running commands
+3) How to contribute changes using Pull Requests
+
+## Dependencies
+
+This package requires the following dependencies to run:
+
+1) [Yarn V1](https://yarnpkg.com/getting-started/install)
+3) [Docker](https://docs.docker.com/get-docker/)
+
+## Setting up your workspace
+
+To contribute to this repository, start by setting up this project locally:
+
+1) Fork this repository into your Git account
+2) Clone the forked repository to your local directory using `git clone`
+3) Install any of the above missing dependencies
+
+## Launching the project
+
+Once the project is installed locally, you are ready to start up its services:
+
+1) Ensure that your Docker service is running.
+2) From the root directory of your project, run the `yarn` command in the command prompt to install yarn.
+3) Run the `yarn bootstrap` command to  install any necessary dependencies.
+4) Run `yarn test:services:start` to start up this project's Docker container. The container will launch all services within your workspace.
+
+## Available Commands
+
+Once the project is running, you can execute a variety of commands. The root workspace and each subpackage contain a `package.json` file with a  `scripts` field listing all the commands that can be executed from that directory. This project also supports native `yarn`, and `docker` commands.
+
+Here, we'll cover the primary commands that can be executed from the root directory. Unless otherwise noted, these commands can also be executed from a subpackage. If executed from a subpackage, they will only affect that subpackage, rather than the entire workspace.
+
+### `yarn`
+
+The `yarn` command installs yarn in the workspace.
+
+### `yarn bootstrap`
+
+The `yarn bootstrap` command installs all dependencies in the workspace.
+
+### `yarn test:services:start`
+
+The `yarn test:services:start` command starts up the project's Docker container, launching all services in the workspace. This command must be executed from the root directory.
+
+### `yarn test:services:stop`
+
+The `yarn test:services:stop` command brings down the project's Docker container, halting all services. This command must be executed from the root directory.
+
+### `yarn test`
+
+The `yarn test` command runs all tests in the workspace.
+
+### `yarn clean`
+
+The `yarn clean` command removes yarn and all dependencies installed by yarn. After executing this command, you must repeat the steps in *Setting up your workspace* to rebuild your workspace.
+
+## Contributing Changes
+
+Now that you've set up your workspace, you're ready to contribute changes to the `keyv` repository.
+
+1) Make any changes that you would like to contribute in your local workspace.
+2) After making these changes, ensure that the project's tests still pass by executing the `yarn test` command in the root directory.
+3) Commit your changes and push them to your forked repository.
+4) Navigate to the original `keyv` repository and go the *Pull Requests* tab.
+5) Click the *New pull request* button, and open a pull request for the branch in your repository that contains your changes.
+6) Once your pull request is created, ensure that all checks have passed and that your branch has no conflicts with the base branch. If there are any issues, resolve these changes in your local repository, and then commit and push them to git.
+7) Similarly, respond to any reviewer comments or requests for changes by making edits to your local repository and pushing them to Git.
+8) Once the pull request has been reviewed, those with write access to the branch will be able to merge your changes into the `keyv` repository.
+
+If you need more information on the steps to create a pull request, you can find a detailed walkthrough in the [Github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
+
+## License
+
+MIT © Jared Wray
