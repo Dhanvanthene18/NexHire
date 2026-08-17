@@ -1,34 +1,46 @@
 {
-  "name": "lightningcss-win32-x64-msvc",
-  "version": "1.33.0",
-  "license": "MPL-2.0",
-  "description": "A CSS parser, transformer, and minifier written in Rust",
-  "main": "lightningcss.win32-x64-msvc.node",
-  "browserslist": "last 2 versions, not dead",
-  "publishConfig": {
-    "access": "public"
-  },
-  "funding": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/parcel"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/parcel-bundler/lightningcss.git"
-  },
-  "engines": {
-    "node": ">= 12.0.0"
-  },
-  "files": [
-    "lightningcss.win32-x64-msvc.node"
-  ],
-  "resolutions": {
-    "lightningcss": "link:."
-  },
-  "os": [
-    "win32"
-  ],
-  "cpu": [
-    "x64"
-  ]
+	"name": "locate-path",
+	"version": "6.0.0",
+	"description": "Get the first path that exists on disk of multiple paths",
+	"license": "MIT",
+	"repository": "sindresorhus/locate-path",
+	"funding": "https://github.com/sponsors/sindresorhus",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "https://sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=10"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts"
+	],
+	"keywords": [
+		"locate",
+		"path",
+		"paths",
+		"file",
+		"files",
+		"exists",
+		"find",
+		"finder",
+		"search",
+		"searcher",
+		"array",
+		"iterable",
+		"iterator"
+	],
+	"dependencies": {
+		"p-locate": "^5.0.0"
+	},
+	"devDependencies": {
+		"ava": "^2.4.0",
+		"tsd": "^0.13.1",
+		"xo": "^0.32.1"
+	}
 }

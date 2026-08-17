@@ -1,61 +1,83 @@
-type Pathname = string
+declare namespace locatePath {
+	interface Options {
+		/**
+		Current working directory.
 
-interface TestResult {
-  ignored: boolean
-  unignored: boolean
+		@default process.cwd()
+		*/
+		readonly cwd?: string;
+
+		/**
+		Type of path to match.
+
+		@default 'file'
+		*/
+		readonly type?: 'file' | 'directory';
+
+		/**
+		Allow symbolic links to match if they point to the requested path type.
+
+		@default true
+		*/
+		readonly allowSymlinks?: boolean;
+	}
+
+	interface AsyncOptions extends Options {
+		/**
+		Number of concurrently pending promises. Minimum: `1`.
+
+		@default Infinity
+		*/
+		readonly concurrency?: number;
+
+		/**
+		Preserve `paths` order when searching.
+
+		Disable this to improve performance if you don't care about the order.
+
+		@default true
+		*/
+		readonly preserveOrder?: boolean;
+	}
 }
 
-export interface Ignore {
-  /**
-   * Adds one or several rules to the current manager.
-   * @param  {string[]} patterns
-   * @returns IgnoreBase
-   */
-  add(patterns: string | Ignore | readonly (string | Ignore)[]): this
+declare const locatePath: {
+	/**
+	Synchronously get the first path that exists on disk of multiple paths.
 
-  /**
-   * Filters the given array of pathnames, and returns the filtered array.
-   * NOTICE that each path here should be a relative path to the root of your repository.
-   * @param paths the array of paths to be filtered.
-   * @returns The filtered array of paths
-   */
-  filter(pathnames: readonly Pathname[]): Pathname[]
+	@param paths - Paths to check.
+	@returns The first path that exists or `undefined` if none exists.
+	*/
+	sync: (
+		paths: Iterable<string>,
+		options?: locatePath.Options
+	) => string | undefined;
 
-  /**
-   * Creates a filter function which could filter
-   * an array of paths with Array.prototype.filter.
-   */
-  createFilter(): (pathname: Pathname) => boolean
+	/**
+	Get the first path that exists on disk of multiple paths.
 
-  /**
-   * Returns Boolean whether pathname should be ignored.
-   * @param  {string} pathname a path to check
-   * @returns boolean
-   */
-  ignores(pathname: Pathname): boolean
+	@param paths - Paths to check.
+	@returns The first path that exists or `undefined` if none exists.
 
-  /**
-   * Returns whether pathname should be ignored or unignored
-   * @param  {string} pathname a path to check
-   * @returns TestResult
-   */
-  test(pathname: Pathname): TestResult
-}
+	@example
+	```
+	import locatePath = require('locate-path');
 
-export interface Options {
-  ignorecase?: boolean
-  // For compatibility
-  ignoreCase?: boolean
-  allowRelativePaths?: boolean
-}
+	const files = [
+		'unicorn.png',
+		'rainbow.png', // Only this one actually exists on disk
+		'pony.png'
+	];
 
-/**
- * Creates new ignore manager.
- */
-declare function ignore(options?: Options): Ignore
+	(async () => {
+		console(await locatePath(files));
+		//=> 'rainbow'
+	})();
+	```
+	*/
+	(paths: Iterable<string>, options?: locatePath.AsyncOptions): Promise<
+	string | undefined
+	>;
+};
 
-declare namespace ignore {
-  export function isPathValid (pathname: string): boolean
-}
-
-export default ignore
+export = locatePath;
