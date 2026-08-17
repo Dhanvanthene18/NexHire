@@ -1,196 +1,105 @@
-# levn [![Build Status](https://travis-ci.org/gkz/levn.png)](https://travis-ci.org/gkz/levn) <a name="levn" />
-__Light ECMAScript (JavaScript) Value Notation__
-Levn is a library which allows you to parse a string into a JavaScript value based on an expected type. It is meant for short amounts of human entered data (eg. config files, command line arguments).
+# ⚡️ Lightning CSS
 
-Levn aims to concisely describe JavaScript values in text, and allow for the extraction and validation of those values. Levn uses [type-check](https://github.com/gkz/type-check) for its type format, and to validate the results. MIT license. Version 0.4.1.
+An extremely fast CSS parser, transformer, and minifier written in Rust. Use it with [Parcel](https://parceljs.org), as a standalone library or CLI, or via a plugin with any other tool.
 
-__How is this different than JSON?__ levn is meant to be written by humans only, is (due to the previous point) much more concise, can be validated against supplied types, has regex and date literals, and can easily be extended with custom types. On the other hand, it is probably slower and thus less efficient at transporting large amounts of data, which is fine since this is not its purpose.
+<img width="680" alt="performance and build size charts" src="https://user-images.githubusercontent.com/19409/189022599-28246659-f94a-46a4-9de0-b6d17adb0e22.png#gh-light-mode-only">
+<img width="680" alt="performance and build size charts" src="https://user-images.githubusercontent.com/19409/189022693-6956b044-422b-4f56-9628-d59c6f791095.png#gh-dark-mode-only">
 
-    npm install levn
+## Features
 
-For updates on levn, [follow me on twitter](https://twitter.com/gkzahariev).
+- **Extremely fast** – Parsing and minifying large files is completed in milliseconds, often with significantly smaller output than other tools. See [benchmarks](#benchmarks) below.
+- **Typed property values** – many other CSS parsers treat property values as an untyped series of tokens. This means that each transformer that wants to do something with these values must interpret them itself, leading to duplicate work and inconsistencies. Lightning CSS parses all values using the grammar from the CSS specification, and exposes a specific value type for each property.
+- **Browser-grade parser** – Lightning CSS is built on the [cssparser](https://github.com/servo/rust-cssparser) and [selectors](https://github.com/servo/stylo/tree/main/selectors) crates created by Mozilla and used by Firefox and Servo. These provide a solid general purpose CSS-parsing foundation on top of which Lightning CSS implements support for all specific CSS rules and properties.
+- **Minification** – One of the main purposes of Lightning CSS is to minify CSS to make it smaller. This includes many optimizations including:
+  - Combining longhand properties into shorthands where possible.
+  - Merging adjacent rules with the same selectors or declarations when it is safe to do so.
+  - Combining CSS transforms into a single matrix or vice versa when smaller.
+  - Removing vendor prefixes that are not needed, based on the provided browser targets.
+  - Reducing `calc()` expressions where possible.
+  - Converting colors to shorter hex notation where possible.
+  - Minifying gradients.
+  - Minifying CSS grid templates.
+  - Normalizing property value order.
+  - Removing default property sub-values which will be inferred by browsers.
+  - Many micro-optimizations, e.g. converting to shorter units, removing unnecessary quotation marks, etc.
+- **Vendor prefixing** – Lightning CSS accepts a list of browser targets, and automatically adds (and removes) vendor prefixes.
+- **Browserslist configuration** – Lightning CSS supports opt-in browserslist configuration discovery to resolve browser targets and integrate with your existing tools and config setup.
+- **Syntax lowering** – Lightning CSS parses modern CSS syntax, and generates more compatible output where needed, based on browser targets.
+  - CSS Nesting
+  - Custom media queries (draft spec)
+  - Logical properties
+  * [Color Level 5](https://drafts.csswg.org/css-color-5/)
+    - `color-mix()` function
+    - Relative color syntax, e.g. `lab(from purple calc(l * .8) a b)`
+  - [Color Level 4](https://drafts.csswg.org/css-color-4/)
+    - `lab()`, `lch()`, `oklab()`, and `oklch()` colors
+    - `color()` function supporting predefined color spaces such as `display-p3` and `xyz`
+    - Space separated components in `rgb` and `hsl` functions
+    - Hex with alpha syntax
+    - `hwb()` color syntax
+    - Percent syntax for opacity
+    - `#rgba` and `#rrggbbaa` hex colors
+  - Selectors
+    - `:not` with multiple arguments
+    - `:lang` with multiple arguments
+    - `:dir`
+    - `:is`
+  - Double position gradient stops (e.g. `red 40% 80%`)
+  - `clamp()`, `round()`, `rem()`, and `mod()` math functions
+  - Alignment shorthands (e.g. `place-items`)
+  - Two-value `overflow` shorthand
+  - Media query range syntax (e.g. `@media (width <= 100px)` or `@media (100px < width < 500px)`)
+  - Multi-value `display` property (e.g. `inline flex`)
+  - `system-ui` font family fallbacks
+- **CSS modules** – Lightning CSS supports compiling a subset of [CSS modules](https://github.com/css-modules/css-modules) features.
+  - Locally scoped class and id selectors
+  - Locally scoped custom identifiers, e.g. `@keyframes` names, grid lines/areas, `@counter-style` names, etc.
+  - Opt-in support for locally scoped CSS variables and other dashed identifiers.
+  - `:local()` and `:global()` selectors
+  - The `composes` property
+- **Custom transforms** – The Lightning CSS visitor API can be used to implement custom transform plugins.
 
+## Documentation
 
-## Quick Examples
+Lightning CSS can be used from [Parcel](https://parceljs.org), as a standalone library from JavaScript or Rust, using a standalone CLI, or wrapped as a plugin within any other tool. See the [Lightning CSS website](https://lightningcss.dev/docs.html) for documentation.
 
-```js
-var parse = require('levn').parse;
-parse('Number', '2');      // 2
-parse('String', '2');      // '2'
-parse('String', 'levn');   // 'levn'
-parse('String', 'a b');    // 'a b'
-parse('Boolean', 'true');  // true
+## Benchmarks
 
-parse('Date', '#2011-11-11#'); // (Date object)
-parse('Date', '2011-11-11');   // (Date object)
-parse('RegExp', '/[a-z]/gi');  // /[a-z]/gi
-parse('RegExp', 're');         // /re/
-parse('Int', '2');             // 2
+<img width="680" alt="performance and build size charts" src="https://user-images.githubusercontent.com/19409/189022599-28246659-f94a-46a4-9de0-b6d17adb0e22.png#gh-light-mode-only">
+<img width="680" alt="performance and build size charts" src="https://user-images.githubusercontent.com/19409/189022693-6956b044-422b-4f56-9628-d59c6f791095.png#gh-dark-mode-only">
 
-parse('Number | String', 'str'); // 'str'
-parse('Number | String', '2');   // 2
-
-parse('[Number]', '[1,2,3]');                      // [1,2,3]
-parse('(String, Boolean)', '(hi, false)');         // ['hi', false]
-parse('{a: String, b: Number}', '{a: str, b: 2}'); // {a: 'str', b: 2}
-
-// at the top level, you can ommit surrounding delimiters
-parse('[Number]', '1,2,3');                      // [1,2,3]
-parse('(String, Boolean)', 'hi, false');         // ['hi', false]
-parse('{a: String, b: Number}', 'a: str, b: 2'); // {a: 'str', b: 2}
-
-// wildcard - auto choose type
-parse('*', '[hi,(null,[42]),{k: true}]'); // ['hi', [null, [42]], {k: true}]
 ```
-## Usage
+$ node bench.js bootstrap-4.css
+cssnano: 544.809ms
+159636 bytes
 
-`require('levn');` returns an object that exposes three properties. `VERSION` is the current version of the library as a string. `parse` and `parsedTypeParse` are functions.
+esbuild: 17.199ms
+160332 bytes
 
-```js
-// parse(type, input, options);
-parse('[Number]', '1,2,3'); // [1, 2, 3]
+lightningcss: 4.16ms
+143091 bytes
 
-// parsedTypeParse(parsedType, input, options);
-var parsedType = require('type-check').parseType('[Number]');
-parsedTypeParse(parsedType, '1,2,3'); // [1, 2, 3]
-```
 
-### parse(type, input, options)
+$ node bench.js animate.css
+cssnano: 283.105ms
+71723 bytes
 
-`parse` casts the string `input` into a JavaScript value according to the specified `type` in the [type format](https://github.com/gkz/type-check#type-format) (and taking account the optional `options`) and returns the resulting JavaScript value.
+esbuild: 11.858ms
+72183 bytes
 
-##### arguments
-* type - `String` - the type written in the [type format](https://github.com/gkz/type-check#type-format) which to check against
-* input - `String` - the value written in the [levn format](#levn-format)
-* options - `Maybe Object` - an optional parameter specifying additional [options](#options)
+lightningcss: 1.973ms
+23666 bytes
 
-##### returns
-`*` - the resulting JavaScript value
 
-##### example
-```js
-parse('[Number]', '1,2,3'); // [1, 2, 3]
-```
+$ node bench.js tailwind.css
+cssnano: 2.198s
+1925626 bytes
 
-### parsedTypeParse(parsedType, input, options)
+esbuild: 107.668ms
+1961642 bytes
 
-`parsedTypeParse` casts the string `input` into a JavaScript value according to the specified `type` which has already been parsed (and taking account the optional `options`) and returns the resulting JavaScript value. You can parse a type using the [type-check](https://github.com/gkz/type-check) library's `parseType` function.
-
-##### arguments
-* type - `Object` - the type in the parsed type format which to check against
-* input - `String` - the value written in the [levn format](#levn-format)
-* options - `Maybe Object` - an optional parameter specifying additional [options](#options)
-
-##### returns
-`*` - the resulting JavaScript value
-
-##### example
-```js
-var parsedType = require('type-check').parseType('[Number]');
-parsedTypeParse(parsedType, '1,2,3'); // [1, 2, 3]
-```
-
-## Levn Format
-
-Levn can use the type information you provide to choose the appropriate value to produce from the input. For the same input, it will choose a different output value depending on the type provided. For example, `parse('Number', '2')` will produce the number `2`, but `parse('String', '2')` will produce the string `"2"`.
-
-If you do not provide type information, and simply use `*`, levn will parse the input according the unambiguous "explicit" mode, which we will now detail - you can also set the `explicit` option to true manually in the [options](#options).
-
-* `"string"`, `'string'` are parsed as a String, eg. `"a msg"` is `"a msg"`
-* `#date#` is parsed as a Date, eg. `#2011-11-11#` is `new Date('2011-11-11')`
-* `/regexp/flags` is parsed as a RegExp, eg. `/re/gi` is `/re/gi`
-* `undefined`, `null`, `NaN`, `true`, and `false` are all their JavaScript equivalents
-* `[element1, element2, etc]` is an Array, and the casting procedure is recursively applied to each element. Eg. `[1,2,3]` is `[1,2,3]`.
-* `(element1, element2, etc)` is an tuple, and the casting procedure is recursively applied to each element. Eg. `(1, a)` is `(1, a)` (is `[1, 'a']`).
-* `{key1: val1, key2: val2, ...}` is an Object, and the casting procedure is recursively applied to each property. Eg. `{a: 1, b: 2}` is `{a: 1, b: 2}`.
-* Any test which does not fall under the above, and which does not contain special characters (`[``]``(``)``{``}``:``,`) is a string, eg. `$12- blah` is `"$12- blah"`.
-
-If you do provide type information, you can make your input more concise as the program already has some information about what it expects. Please see the [type format](https://github.com/gkz/type-check#type-format) section of [type-check](https://github.com/gkz/type-check) for more information about how to specify types. There are some rules about what levn can do with the information:
-
-* If a String is expected, and only a String, all characters of the input (including any special ones) will become part of the output. Eg. `[({})]` is `"[({})]"`, and `"hi"` is `'"hi"'`.
-* If a Date is expected, the surrounding `#` can be omitted from date literals. Eg. `2011-11-11` is `new Date('2011-11-11')`.
-* If a RegExp is expected, no flags need to be specified, and the regex is not using any of the special characters,the opening and closing `/` can be omitted - this will have the affect of setting the source of the regex to the input. Eg. `regex` is `/regex/`.
-* If an Array is expected, and it is the root node (at the top level), the opening `[` and closing `]` can be omitted. Eg. `1,2,3` is `[1,2,3]`.
-* If a tuple is expected, and it is the root node (at the top level), the opening `(` and closing `)` can be omitted. Eg. `1, a` is `(1, a)` (is `[1, 'a']`).
-* If an Object is expected, and it is the root node (at the top level), the opening `{` and closing `}` can be omitted. Eg `a: 1, b: 2` is `{a: 1, b: 2}`.
-
-If you list multiple types (eg. `Number | String`), it will first attempt to cast to the first type and then validate - if the validation fails it will move on to the next type and so forth, left to right. You must be careful as some types will succeed with any input, such as String. Thus put String at the end of your list. In non-explicit mode, Date and RegExp will succeed with a large variety of input - also be careful with these and list them near the end if not last in your list.
-
-Whitespace between special characters and elements is inconsequential.
-
-## Options
-
-Options is an object. It is an optional parameter to the `parse` and `parsedTypeParse` functions.
-
-### Explicit
-
-A `Boolean`. By default it is `false`.
-
-__Example:__
-
-```js
-parse('RegExp', 're', {explicit: false});          // /re/
-parse('RegExp', 're', {explicit: true});           // Error: ... does not type check...
-parse('RegExp | String', 're', {explicit: true});  // 're'
+lightningcss: 43.368ms
+1824130 bytes
 ```
 
-`explicit` sets whether to be in explicit mode or not. Using `*` automatically activates explicit mode. For more information, read the [levn format](#levn-format) section.
-
-### customTypes
-
-An `Object`. Empty `{}` by default.
-
-__Example:__
-
-```js
-var options = {
-  customTypes: {
-    Even: {
-      typeOf: 'Number',
-      validate: function (x) {
-        return x % 2 === 0;
-      },
-      cast: function (x) {
-        return {type: 'Just', value: parseInt(x)};
-      }
-    }
-  }
-}
-parse('Even', '2', options); // 2
-parse('Even', '3', options); // Error: Value: "3" does not type check...
-```
-
-__Another Example:__
-```js
-function Person(name, age){
-  this.name = name;
-  this.age = age;
-}
-var options = {
-  customTypes: {
-    Person: {
-      typeOf: 'Object',
-      validate: function (x) {
-        x instanceof Person;
-      },
-      cast: function (value, options, typesCast) {
-        var name, age;
-        if ({}.toString.call(value).slice(8, -1) !== 'Object') {
-          return {type: 'Nothing'};
-        }
-        name = typesCast(value.name, [{type: 'String'}], options);
-        age = typesCast(value.age, [{type: 'Numger'}], options);
-        return {type: 'Just', value: new Person(name, age)};
-    }
-  }
-}
-parse('Person', '{name: Laura, age: 25}', options); // Person {name: 'Laura', age: 25}
-```
-
-`customTypes` is an object whose keys are the name of the types, and whose values are an object with three properties, `typeOf`, `validate`, and `cast`. For more information about `typeOf` and `validate`, please see the [custom types](https://github.com/gkz/type-check#custom-types) section of type-check.
-
-`cast` is a function which receives three arguments, the value under question, options, and the typesCast function. In `cast`, attempt to cast the value into the specified type. If you are successful, return an object in the format `{type: 'Just', value: CAST-VALUE}`, if you know it won't work, return `{type: 'Nothing'}`.  You can use the `typesCast` function to cast any child values. Remember to pass `options` to it. In your function you can also check for `options.explicit` and act accordingly.
-
-## Technical About
-
-`levn` is written in [LiveScript](http://livescript.net/) - a language that compiles to JavaScript. It uses [type-check](https://github.com/gkz/type-check) to both parse types and validate values. It also uses the [prelude.ls](http://preludels.com/) library.
+For more benchmarks comparing more tools and input, see [here](http://goalsmashers.github.io/css-minification-benchmark/). Note that some of the tools shown perform unsafe optimizations that may change the behavior of the original CSS in favor of smaller file size. Lightning CSS does not do this – the output CSS should always behave identically to the input. Keep this in mind when comparing file sizes between tools.
