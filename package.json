@@ -1,43 +1,30 @@
 {
-  "name": "json-stable-stringify-without-jsonify",
-  "version": "1.0.1",
-  "description": "deterministic JSON.stringify() with custom sorting to get deterministic hashes from stringified results, with no public domain dependencies",
-  "main": "index.js",
-  "dependencies": {
+  "name": "js-tokens",
+  "version": "4.0.0",
+  "author": "Simon Lydell",
+  "license": "MIT",
+  "description": "A regex that tokenizes JavaScript.",
+  "keywords": [
+    "JavaScript",
+    "js",
+    "token",
+    "tokenize",
+    "regex"
+  ],
+  "files": [
+    "index.js"
+  ],
+  "repository": "lydell/js-tokens",
+  "scripts": {
+    "test": "mocha --ui tdd",
+    "esprima-compare": "node esprima-compare ./index.js everything.js/es5.js",
+    "build": "node generate-index.js",
+    "dev": "npm run build && npm test"
   },
   "devDependencies": {
-    "tape": "~1.0.4"
-  },
-  "scripts": {
-    "test": "tape test/*.js"
-  },
-  "testling": {
-    "files": "test/*.js",
-    "browsers": [
-      "ie/8..latest",
-      "ff/5", "ff/latest",
-      "chrome/15", "chrome/latest",
-      "safari/latest",
-      "opera/latest"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/samn/json-stable-stringify.git"
-  },
-  "homepage": "https://github.com/samn/json-stable-stringify",
-  "keywords": [
-    "json",
-    "stringify",
-    "deterministic",
-    "hash",
-    "sort",
-    "stable"
-  ],
-  "author": {
-    "name": "James Halliday",
-    "email": "mail@substack.net",
-    "url": "http://substack.net"
-  },
-  "license": "MIT"
+    "coffeescript": "2.1.1",
+    "esprima": "4.0.0",
+    "everything.js": "1.0.3",
+    "mocha": "5.0.0"
+  }
 }

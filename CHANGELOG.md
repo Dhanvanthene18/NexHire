@@ -1,108 +1,151 @@
-# 1.2.1
-- fix version
+### Version 4.0.0 (2018-01-28) ###
 
-# 1.2.0
-- add `List.remove`
-- build with LiveScript 1.6.0
-- update dependencies
-- remove coverage calculation
+- Added: Support for ES2018. The only change needed was recognizing the `s`
+  regex flag.
+- Changed: _All_ tokens returned by the `matchToToken` function now have a
+  `closed` property. It is set to `undefined` for the tokens where “closed”
+  doesn’t make sense. This means that all tokens objects have the same shape,
+  which might improve performance.
 
-# 1.1.2
-- add `Func.memoize`
-- fix `zip-all` and `zip-with-all` corner case (no input)
-- build with LiveScript 1.4.0
+These are the breaking changes:
 
-# 1.1.1
-- curry `unique-by`, `minimum-by`
+- `'/a/s'.match(jsTokens)` no longer returns `['/', 'a', '/', 's']`, but
+  `['/a/s']`. (There are of course other variations of this.)
+- Code that rely on some token objects not having the `closed` property could
+  now behave differently.
 
-# 1.1.0
-- added `List` functions: `maximum-by`, `minimum-by`, `unique-by`
-- added `List` functions: `at`, `elem-index`, `elem-indices`, `find-index`, `find-indices`
-- added `Str` functions: `capitalize`, `camelize`, `dasherize`
-- added `Func` function: `over` - eg. ``same-length = (==) `over` (.length)``
-- exported `Str.repeat` through main `prelude` object
-- fixed definition of `foldr` and `foldr1`, the new correct definition is backwards incompatible with the old, incorrect one
-- fixed issue with `fix`
-- improved code coverage
 
-# 1.0.3
-- build browser versions
+### Version 3.0.2 (2017-06-28) ###
 
-# 1.0.2
-- bug fix for `flatten` - slight change with bug fix, flattens arrays only, not array-like objects
+- No code changes. Just updates to the readme.
 
-# 1.0.1
-- bug fixes for `drop-while` and `take-while`
 
-# 1.0.0
-* massive update - separated functions into separate modules
-* functions do not accept multiple types anymore - use different versions in their respective modules in some cases (eg. `Obj.map`), or use `chars` or `values` in other cases to transform into a list
-* objects are no longer transformed into functions, simply use `(obj.)` in LiveScript to do that
-* browser version now using browserify - use `prelude = require('prelude-ls')`
-* added `compact`, `split`, `flatten`, `difference`, `intersection`, `union`, `count-by`, `group-by`, `chars`, `unchars`, `apply`
-* added `lists-to-obj` which takes a list of keys and list of values and zips them up into an object, and the converse `obj-to-lists`
-* added `pairs-to-obj` which takes a list of pairs (2 element lists) and creates an object, and the converse `obj-to-pairs`
-* removed `cons`, `append` - use the concat operator
-* removed `compose` - use the compose operator
-* removed `obj-to-func` - use partially applied access (eg. `(obj.)`)
-* removed `length` - use `(.length)`
-* `sort-by` renamed to `sort-with`
-* added new `sort-by`
-* removed `compare` - just use the new `sort-by`
-* `break-it` renamed `break-list`, (`Str.break-str` for the string version)
-* added `Str.repeat` which creates a new string by repeating the input n times
-* `unfold` as alias to `unfoldr` is no longer used
-* fixed up style and compiled with LiveScript 1.1.1
-* use Make instead of Slake
-* greatly improved tests
+### Version 3.0.1 (2017-01-30) ###
 
-# 0.6.0
-* fixed various bugs
-* added `fix`, a fixpoint (Y combinator) for anonymous recursive functions
-* added `unfoldr` (alias `unfold`)
-* calling `replicate` with a string now returns a list of strings
-* removed `partial`, just use native partial application in LiveScript using the `_` placeholder, or currying
-* added `sort`, `sortBy`, and `compare`
+- Fixed: ES2015 unicode escapes with more than 6 hex digits are now matched
+  correctly.
 
-# 0.5.0
-* removed `lookup` - use (.prop)
-* removed `call` - use (.func arg1, arg2)
-* removed `pluck` - use map (.prop), xs
-* fixed buys wtih `head` and `last`
-* added non-minifed browser version, as `prelude-browser.js`
-* renamed `prelude-min.js` to `prelude-browser-min.js`
-* renamed `zip` to `zipAll`
-* renamed `zipWith` to `zipAllWith`
-* added `zip`, a curried zip that takes only two arguments
-* added `zipWith`, a curried zipWith that takes only two arguments
 
-# 0.4.0
-* added `parition` function
-* added `curry` function
-* removed `elem` function (use `in`)
-* removed `notElem` function (use `not in`)
+### Version 3.0.0 (2017-01-11) ###
 
-# 0.3.0
-* added `listToObject`
-* added `unique`
-* added `objToFunc`
-* added support for using strings in map and the like
-* added support for using objects in map and the like
-* added ability to use objects instead of functions in certain cases
-* removed `error` (just use throw)
-* added `tau` constant
-* added `join`
-* added `values`
-* added `keys`
-* added `partial`
-* renamed `log` to `ln`
-* added alias to `head`: `first`
-* added `installPrelude` helper
+This release contains one breaking change, that should [improve performance in
+V8][v8-perf]:
 
-# 0.2.0
-* removed functions that simply warp operators as you can now use operators as functions in LiveScript
-* `min/max` are now curried and take only 2 arguments
-* added `call`
+> So how can you, as a JavaScript developer, ensure that your RegExps are fast?
+> If you are not interested in hooking into RegExp internals, make sure that
+> neither the RegExp instance, nor its prototype is modified in order to get the
+> best performance:
+>
+> ```js
+> var re = /./g;
+> re.exec('');  // Fast path.
+> re.new_property = 'slow';
+> ```
 
-# 0.1.0
-* initial public release
+This module used to export a single regex, with `.matchToToken` bolted
+on, just like in the above example. This release changes the exports of
+the module to avoid this issue.
+
+Before:
+
+```js
+import jsTokens from "js-tokens"
+// or:
+var jsTokens = require("js-tokens")
+var matchToToken = jsTokens.matchToToken
+```
+
+After:
+
+```js
+import jsTokens, {matchToToken} from "js-tokens"
+// or:
+var jsTokens = require("js-tokens").default
+var matchToToken = require("js-tokens").matchToToken
+```
+
+[v8-perf]: http://v8project.blogspot.se/2017/01/speeding-up-v8-regular-expressions.html
+
+
+### Version 2.0.0 (2016-06-19) ###
+
+- Added: Support for ES2016. In other words, support for the `**` exponentiation
+  operator.
+
+These are the breaking changes:
+
+- `'**'.match(jsTokens)` no longer returns `['*', '*']`, but `['**']`.
+- `'**='.match(jsTokens)` no longer returns `['*', '*=']`, but `['**=']`.
+
+
+### Version 1.0.3 (2016-03-27) ###
+
+- Improved: Made the regex ever so slightly smaller.
+- Updated: The readme.
+
+
+### Version 1.0.2 (2015-10-18) ###
+
+- Improved: Limited npm package contents for a smaller download. Thanks to
+  @zertosh!
+
+
+### Version 1.0.1 (2015-06-20) ###
+
+- Fixed: Declared an undeclared variable.
+
+
+### Version 1.0.0 (2015-02-26) ###
+
+- Changed: Merged the 'operator' and 'punctuation' types into 'punctuator'. That
+  type is now equivalent to the Punctuator token in the ECMAScript
+  specification. (Backwards-incompatible change.)
+- Fixed: A `-` followed by a number is now correctly matched as a punctuator
+  followed by a number. It used to be matched as just a number, but there is no
+  such thing as negative number literals. (Possibly backwards-incompatible
+  change.)
+
+
+### Version 0.4.1 (2015-02-21) ###
+
+- Added: Support for the regex `u` flag.
+
+
+### Version 0.4.0 (2015-02-21) ###
+
+- Improved: `jsTokens.matchToToken` performance.
+- Added: Support for octal and binary number literals.
+- Added: Support for template strings.
+
+
+### Version 0.3.1 (2015-01-06) ###
+
+- Fixed: Support for unicode spaces. They used to be allowed in names (which is
+  very confusing), and some unicode newlines were wrongly allowed in strings and
+  regexes.
+
+
+### Version 0.3.0 (2014-12-19) ###
+
+- Changed: The `jsTokens.names` array has been replaced with the
+  `jsTokens.matchToToken` function. The capturing groups of `jsTokens` are no
+  longer part of the public API; instead use said function. See this [gist] for
+  an example. (Backwards-incompatible change.)
+- Changed: The empty string is now considered an “invalid” token, instead an
+  “empty” token (its own group). (Backwards-incompatible change.)
+- Removed: component support. (Backwards-incompatible change.)
+
+[gist]: https://gist.github.com/lydell/be49dbf80c382c473004
+
+
+### Version 0.2.0 (2014-06-19) ###
+
+- Changed: Match ES6 function arrows (`=>`) as an operator, instead of its own
+  category (“functionArrow”), for simplicity. (Backwards-incompatible change.)
+- Added: ES6 splats (`...`) are now matched as an operator (instead of three
+  punctuations). (Backwards-incompatible change.)
+
+
+### Version 0.1.0 (2014-03-08) ###
+
+- Initial release.
