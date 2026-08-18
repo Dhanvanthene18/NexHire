@@ -1,23 +1,16 @@
 'use strict';
-const fs = require('fs');
-const {promisify} = require('util');
 
-const pAccess = promisify(fs.access);
+const pathKey = (options = {}) => {
+	const environment = options.env || process.env;
+	const platform = options.platform || process.platform;
 
-module.exports = async path => {
-	try {
-		await pAccess(path);
-		return true;
-	} catch (_) {
-		return false;
+	if (platform !== 'win32') {
+		return 'PATH';
 	}
+
+	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
 };
 
-module.exports.sync = path => {
-	try {
-		fs.accessSync(path);
-		return true;
-	} catch (_) {
-		return false;
-	}
-};
+module.exports = pathKey;
+// TODO: Remove this for the next major release
+module.exports.default = pathKey;
