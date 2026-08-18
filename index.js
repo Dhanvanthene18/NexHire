@@ -1,62 +1,57 @@
-import crypto from 'crypto'
 
-import { urlAlphabet } from './url-alphabet/index.js'
 
-const POOL_SIZE_MULTIPLIER = 128
-let pool, poolOffset
 
-let fillPool = bytes => {
-  if (bytes < 0) throw new RangeError('Wrong ID size')
-  try {
-    if (!pool || pool.length < bytes) {
-      pool = Buffer.allocUnsafe(bytes * POOL_SIZE_MULTIPLIER)
-      crypto.randomFillSync(pool)
-      poolOffset = 0
-    } else if (poolOffset + bytes > pool.length) {
-      crypto.randomFillSync(pool)
-      poolOffset = 0
-    }
-  } catch (e) {
-    pool = undefined
-    throw e
-  }
-  poolOffset += bytes
+/*
+ * @version    1.4.0
+ * @date       2015-10-26
+ * @stability  3 - Stable
+ * @author     Lauri Rooden (https://github.com/litejs/natural-compare-lite)
+ * @license    MIT License
+ */
+
+
+var naturalCompare = function(a, b) {
+	var i, codeA
+	, codeB = 1
+	, posA = 0
+	, posB = 0
+	, alphabet = String.alphabet
+
+	function getCode(str, pos, code) {
+		if (code) {
+			for (i = pos; code = getCode(str, i), code < 76 && code > 65;) ++i;
+			return +str.slice(pos - 1, i)
+		}
+		code = alphabet && alphabet.indexOf(str.charAt(pos))
+		return code > -1 ? code + 76 : ((code = str.charCodeAt(pos) || 0), code < 45 || code > 127) ? code
+			: code < 46 ? 65               // -
+			: code < 48 ? code - 1
+			: code < 58 ? code + 18        // 0-9
+			: code < 65 ? code - 11
+			: code < 91 ? code + 11        // A-Z
+			: code < 97 ? code - 37
+			: code < 123 ? code + 5        // a-z
+			: code - 63
+	}
+
+
+	if ((a+="") != (b+="")) for (;codeB;) {
+		codeA = getCode(a, posA++)
+		codeB = getCode(b, posB++)
+
+		if (codeA < 76 && codeB < 76 && codeA > 66 && codeB > 66) {
+			codeA = getCode(a, posA, posA)
+			codeB = getCode(b, posB, posA = i)
+			posB = i
+		}
+
+		if (codeA != codeB) return (codeA < codeB) ? -1 : 1
+	}
+	return 0
 }
 
-let random = bytes => {
-  fillPool((bytes |= 0))
-  return pool.subarray(poolOffset - bytes, poolOffset)
+try {
+	module.exports = naturalCompare;
+} catch (e) {
+	String.naturalCompare = naturalCompare;
 }
-
-let customRandom = (alphabet, defaultSize, getRandom) => {
-  let mask = (2 << (31 - Math.clz32((alphabet.length - 1) | 1))) - 1
-
-
-  let step = Math.ceil((1.6 * mask * defaultSize) / alphabet.length)
-
-  return (size = defaultSize) => {
-    let id = ''
-    while (true) {
-      let bytes = getRandom(step)
-      let i = step
-      while (i--) {
-        id += alphabet[bytes[i] & mask] || ''
-        if (id.length === size) return id
-      }
-    }
-  }
-}
-
-let customAlphabet = (alphabet, size = 21) =>
-  customRandom(alphabet, size, random)
-
-let nanoid = (size = 21) => {
-  fillPool((size |= 0))
-  let id = ''
-  for (let i = poolOffset - size; i < poolOffset; i++) {
-    id += urlAlphabet[pool[i] & 63]
-  }
-  return id
-}
-
-export { nanoid, customAlphabet, customRandom, urlAlphabet, random }
