@@ -1,125 +1,59 @@
-# locate-path [![Build Status](https://travis-ci.com/sindresorhus/locate-path.svg?branch=master)](https://travis-ci.com/github/sindresorhus/locate-path)
+# ms
 
-> Get the first path that exists on disk of multiple paths
+![CI](https://github.com/vercel/ms/workflows/CI/badge.svg)
 
-## Install
+Use this package to easily convert various time formats to milliseconds.
 
-```
-$ npm install locate-path
-```
-
-## Usage
-
-Here we find the first file that exists on disk, in array order.
+## Examples
 
 ```js
-const locatePath = require('locate-path');
-
-const files = [
-	'unicorn.png',
-	'rainbow.png', // Only this one actually exists on disk
-	'pony.png'
-];
-
-(async () => {
-	console(await locatePath(files));
-	//=> 'rainbow'
-})();
+ms('2 days')  // 172800000
+ms('1d')      // 86400000
+ms('10h')     // 36000000
+ms('2.5 hrs') // 9000000
+ms('2h')      // 7200000
+ms('1m')      // 60000
+ms('5s')      // 5000
+ms('1y')      // 31557600000
+ms('100')     // 100
+ms('-3 days') // -259200000
+ms('-1h')     // -3600000
+ms('-200')    // -200
 ```
 
-## API
+### Convert from Milliseconds
 
-### locatePath(paths, options?)
+```js
+ms(60000)             // "1m"
+ms(2 * 60000)         // "2m"
+ms(-3 * 60000)        // "-3m"
+ms(ms('10 hours'))    // "10h"
+```
 
-Returns a `Promise<string>` for the first path that exists or `undefined` if none exists.
+### Time Format Written-Out
 
-#### paths
+```js
+ms(60000, { long: true })             // "1 minute"
+ms(2 * 60000, { long: true })         // "2 minutes"
+ms(-3 * 60000, { long: true })        // "-3 minutes"
+ms(ms('10 hours'), { long: true })    // "10 hours"
+```
 
-Type: `Iterable<string>`
+## Features
 
-Paths to check.
+- Works both in [Node.js](https://nodejs.org) and in the browser
+- If a number is supplied to `ms`, a string with a unit is returned
+- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`)
+- If you pass a string with a number and a valid unit, the number of equivalent milliseconds is returned
 
-#### options
+## Related Packages
 
-Type: `object`
+- [ms.macro](https://github.com/knpwrs/ms.macro) - Run `ms` as a macro at build-time.
 
-##### concurrency
+## Caught a Bug?
 
-Type: `number`\
-Default: `Infinity`\
-Minimum: `1`
+1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
+2. Link the package to the global module directory: `npm link`
+3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, Node.js will now use your clone of ms!
 
-Number of concurrently pending promises.
-
-##### preserveOrder
-
-Type: `boolean`\
-Default: `true`
-
-Preserve `paths` order when searching.
-
-Disable this to improve performance if you don't care about the order.
-
-##### cwd
-
-Type: `string`\
-Default: `process.cwd()`
-
-Current working directory.
-
-##### type
-
-Type: `string`\
-Default: `'file'`\
-Values: `'file' | 'directory'`
-
-The type of paths that can match.
-
-##### allowSymlinks
-
-Type: `boolean`\
-Default: `true`
-
-Allow symbolic links to match if they point to the chosen path type.
-
-### locatePath.sync(paths, options?)
-
-Returns the first path that exists or `undefined` if none exists.
-
-#### paths
-
-Type: `Iterable<string>`
-
-Paths to check.
-
-#### options
-
-Type: `object`
-
-##### cwd
-
-Same as above.
-
-##### type
-
-Same as above.
-
-##### allowSymlinks
-
-Same as above.
-
-## Related
-
-- [path-exists](https://github.com/sindresorhus/path-exists) - Check if a path exists
-
----
-
-<div align="center">
-	<b>
-		<a href="https://tidelift.com/subscription/pkg/npm-locate-path?utm_source=npm-locate-path&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
-	</b>
-	<br>
-	<sub>
-		Tidelift helps make open source sustainable for maintainers while giving companies<br>assurances about security, maintenance, and licensing for their dependencies.
-	</sub>
-</div>
+As always, you can run the tests using: `npm test`
