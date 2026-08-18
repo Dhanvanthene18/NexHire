@@ -1,59 +1,52 @@
-# ms
+# path-exists [![Build Status](https://travis-ci.org/sindresorhus/path-exists.svg?branch=master)](https://travis-ci.org/sindresorhus/path-exists)
 
-![CI](https://github.com/vercel/ms/workflows/CI/badge.svg)
+> Check if a path exists
 
-Use this package to easily convert various time formats to milliseconds.
+NOTE: `fs.existsSync` has been un-deprecated in Node.js since 6.8.0. If you only need to check synchronously, this module is not needed.
 
-## Examples
+While [`fs.exists()`](https://nodejs.org/api/fs.html#fs_fs_exists_path_callback) is being [deprecated](https://github.com/iojs/io.js/issues/103), there's still a genuine use-case of being able to check if a path exists for other purposes than doing IO with it.
 
-```js
-ms('2 days')  // 172800000
-ms('1d')      // 86400000
-ms('10h')     // 36000000
-ms('2.5 hrs') // 9000000
-ms('2h')      // 7200000
-ms('1m')      // 60000
-ms('5s')      // 5000
-ms('1y')      // 31557600000
-ms('100')     // 100
-ms('-3 days') // -259200000
-ms('-1h')     // -3600000
-ms('-200')    // -200
+Never use this before handling a file though:
+
+> In particular, checking if a file exists before opening it is an anti-pattern that leaves you vulnerable to race conditions: another process may remove the file between the calls to `fs.exists()` and `fs.open()`. Just open the file and handle the error when it's not there.
+
+
+## Install
+
+```
+$ npm install path-exists
 ```
 
-### Convert from Milliseconds
+
+## Usage
 
 ```js
-ms(60000)             // "1m"
-ms(2 * 60000)         // "2m"
-ms(-3 * 60000)        // "-3m"
-ms(ms('10 hours'))    // "10h"
+// foo.js
+const pathExists = require('path-exists');
+
+(async () => {
+	console.log(await pathExists('foo.js'));
+	//=> true
+})();
 ```
 
-### Time Format Written-Out
 
-```js
-ms(60000, { long: true })             // "1 minute"
-ms(2 * 60000, { long: true })         // "2 minutes"
-ms(-3 * 60000, { long: true })        // "-3 minutes"
-ms(ms('10 hours'), { long: true })    // "10 hours"
-```
+## API
 
-## Features
+### pathExists(path)
 
-- Works both in [Node.js](https://nodejs.org) and in the browser
-- If a number is supplied to `ms`, a string with a unit is returned
-- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`)
-- If you pass a string with a number and a valid unit, the number of equivalent milliseconds is returned
+Returns a `Promise<boolean>` of whether the path exists.
 
-## Related Packages
+### pathExists.sync(path)
 
-- [ms.macro](https://github.com/knpwrs/ms.macro) - Run `ms` as a macro at build-time.
+Returns a `boolean` of whether the path exists.
 
-## Caught a Bug?
 
-1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
-2. Link the package to the global module directory: `npm link`
-3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, Node.js will now use your clone of ms!
+## Related
 
-As always, you can run the tests using: `npm test`
+- [path-exists-cli](https://github.com/sindresorhus/path-exists-cli) - CLI for this module
+
+
+## License
+
+MIT © [Sindre Sorhus](https://sindresorhus.com)
