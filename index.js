@@ -1,16 +1,17 @@
 'use strict';
 
-const pathKey = (options = {}) => {
-	const environment = options.env || process.env;
-	const platform = options.platform || process.platform;
+const pico = require('./lib/picomatch');
+const utils = require('./lib/utils');
 
-	if (platform !== 'win32') {
-		return 'PATH';
-	}
+function picomatch(glob, options, returnState = false) {
+  // default to os.platform()
+  if (options && (options.windows === null || options.windows === undefined)) {
+    // don't mutate the original options object
+    options = { ...options, windows: utils.isWindows() };
+  }
 
-	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
-};
+  return pico(glob, options, returnState);
+}
 
-module.exports = pathKey;
-// TODO: Remove this for the next major release
-module.exports.default = pathKey;
+Object.assign(picomatch, pico);
+module.exports = picomatch;
