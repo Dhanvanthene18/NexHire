@@ -1,98 +1,90 @@
-# p-limit
+# p-locate [![Build Status](https://travis-ci.com/sindresorhus/p-locate.svg?branch=master)](https://travis-ci.com/github/sindresorhus/p-locate)
 
-> Run multiple promise-returning & async functions with limited concurrency
+> Get the first fulfilled promise that satisfies the provided testing function
+
+Think of it like an async version of [`Array#find`](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/find).
 
 ## Install
 
 ```
-$ npm install p-limit
+$ npm install p-locate
 ```
 
 ## Usage
 
+Here we find the first file that exists on disk, in array order.
+
 ```js
-const pLimit = require('p-limit');
+const pathExists = require('path-exists');
+const pLocate = require('p-locate');
 
-const limit = pLimit(1);
-
-const input = [
-	limit(() => fetchSomething('foo')),
-	limit(() => fetchSomething('bar')),
-	limit(() => doSomething())
+const files = [
+	'unicorn.png',
+	'rainbow.png', // Only this one actually exists on disk
+	'pony.png'
 ];
 
 (async () => {
-	// Only one promise is run at once
-	const result = await Promise.all(input);
-	console.log(result);
+	const foundPath = await pLocate(files, file => pathExists(file));
+
+	console.log(foundPath);
+	//=> 'rainbow'
 })();
 ```
 
+*The above is just an example. Use [`locate-path`](https://github.com/sindresorhus/locate-path) if you need this.*
+
 ## API
 
-### pLimit(concurrency)
+### pLocate(input, tester, options?)
 
-Returns a `limit` function.
+Returns a `Promise` that is fulfilled when `tester` resolves to `true` or the iterable is done, or rejects if any of the promises reject. The fulfilled value is the current iterable value or `undefined` if `tester` never resolved to `true`.
 
-#### concurrency
+#### input
 
-Type: `number`\
-Minimum: `1`\
-Default: `Infinity`
+Type: `Iterable<Promise | unknown>`
 
-Concurrency limit.
+An iterable of promises/values to test.
 
-### limit(fn, ...args)
-
-Returns the promise returned by calling `fn(...args)`.
-
-#### fn
+#### tester(element)
 
 Type: `Function`
 
-Promise-returning/async function.
+This function will receive resolved values from `input` and is expected to return a `Promise<boolean>` or `boolean`.
 
-#### args
+#### options
 
-Any arguments to pass through to `fn`.
+Type: `object`
 
-Support for passing arguments on to the `fn` is provided in order to be able to avoid creating unnecessary closures. You probably don't need this optimization unless you're pushing a *lot* of functions.
+##### concurrency
 
-### limit.activeCount
+Type: `number`\
+Default: `Infinity`\
+Minimum: `1`
 
-The number of promises that are currently running.
+Number of concurrently pending promises returned by `tester`.
 
-### limit.pendingCount
+##### preserveOrder
 
-The number of promises that are waiting to run (i.e. their internal `fn` was not called yet).
+Type: `boolean`\
+Default: `true`
 
-### limit.clearQueue()
+Preserve `input` order when searching.
 
-Discard pending promises that are waiting to run.
-
-This might be useful if you want to teardown the queue at the end of your program's lifecycle or discard any function calls referencing an intermediary state of your app.
-
-Note: This does not cancel promises that are already running.
-
-## FAQ
-
-### How is this different from the [`p-queue`](https://github.com/sindresorhus/p-queue) package?
-
-This package is only about limiting the number of concurrent executions, while `p-queue` is a fully featured queue implementation with lots of different options, introspection, and ability to pause the queue.
+Disable this to improve performance if you don't care about the order.
 
 ## Related
 
-- [p-queue](https://github.com/sindresorhus/p-queue) - Promise queue with concurrency control
-- [p-throttle](https://github.com/sindresorhus/p-throttle) - Throttle promise-returning & async functions
-- [p-debounce](https://github.com/sindresorhus/p-debounce) - Debounce promise-returning & async functions
-- [p-all](https://github.com/sindresorhus/p-all) - Run promise-returning & async functions concurrently with optional limited concurrency
+- [p-map](https://github.com/sindresorhus/p-map) - Map over promises concurrently
+- [p-filter](https://github.com/sindresorhus/p-filter) - Filter promises concurrently
+- [p-any](https://github.com/sindresorhus/p-any) - Wait for any promise to be fulfilled
 - [More…](https://github.com/sindresorhus/promise-fun)
 
 ---
 
 <div align="center">
 	<b>
-		<a href="https://tidelift.com/subscription/pkg/npm-p-limit?utm_source=npm-p-limit&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
+		<a href="https://tidelift.com/subscription/pkg/npm-p-locate?utm_source=npm-p-locate&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
 	</b>
 	<br>
 	<sub>

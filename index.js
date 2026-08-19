@@ -1,71 +1,50 @@
 'use strict';
-const Queue = require('yocto-queue');
+const pLimit = require('p-limit');
 
-const pLimit = concurrency => {
-	if (!((Number.isInteger(concurrency) || concurrency === Infinity) && concurrency > 0)) {
-		throw new TypeError('Expected `concurrency` to be a number from 1 and up');
+class EndError extends Error {
+	constructor(value) {
+		super();
+		this.value = value;
+	}
+}
+
+// The input can also be a promise, so we await it
+const testElement = async (element, tester) => tester(await element);
+
+// The input can also be a promise, so we `Promise.all()` them both
+const finder = async element => {
+	const values = await Promise.all(element);
+	if (values[1] === true) {
+		throw new EndError(values[0]);
 	}
 
-	const queue = new Queue();
-	let activeCount = 0;
-
-	const next = () => {
-		activeCount--;
-
-		if (queue.size > 0) {
-			queue.dequeue()();
-		}
-	};
-
-	const run = async (fn, resolve, ...args) => {
-		activeCount++;
-
-		const result = (async () => fn(...args))();
-
-		resolve(result);
-
-		try {
-			await result;
-		} catch {}
-
-		next();
-	};
-
-	const enqueue = (fn, resolve, ...args) => {
-		queue.enqueue(run.bind(null, fn, resolve, ...args));
-
-		(async () => {
-			// This function needs to wait until the next microtask before comparing
-			// `activeCount` to `concurrency`, because `activeCount` is updated asynchronously
-			// when the run function is dequeued and called. The comparison in the if-statement
-			// needs to happen asynchronously as well to get an up-to-date value for `activeCount`.
-			await Promise.resolve();
-
-			if (activeCount < concurrency && queue.size > 0) {
-				queue.dequeue()();
-			}
-		})();
-	};
-
-	const generator = (fn, ...args) => new Promise(resolve => {
-		enqueue(fn, resolve, ...args);
-	});
-
-	Object.defineProperties(generator, {
-		activeCount: {
-			get: () => activeCount
-		},
-		pendingCount: {
-			get: () => queue.size
-		},
-		clearQueue: {
-			value: () => {
-				queue.clear();
-			}
-		}
-	});
-
-	return generator;
+	return false;
 };
 
-module.exports = pLimit;
+const pLocate = async (iterable, tester, options) => {
+	options = {
+		concurrency: Infinity,
+		preserveOrder: true,
+		...options
+	};
+
+	const limit = pLimit(options.concurrency);
+
+	// Start all the promises concurrently with optional limit
+	const items = [...iterable].map(element => [element, limit(testElement, element, tester)]);
+
+	// Check the promises either serially or concurrently
+	const checkLimit = pLimit(options.preserveOrder ? 1 : Infinity);
+
+	try {
+		await Promise.all(items.map(element => checkLimit(finder, element)));
+	} catch (error) {
+		if (error instanceof EndError) {
+			return error.value;
+		}
+
+		throw error;
+	}
+};
+
+module.exports = pLocate;

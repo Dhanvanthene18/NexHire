@@ -1,9 +1,9 @@
 {
-	"name": "p-limit",
-	"version": "3.1.0",
-	"description": "Run multiple promise-returning & async functions with limited concurrency",
+	"name": "p-locate",
+	"version": "5.0.0",
+	"description": "Get the first fulfilled promise that satisfies the provided testing function",
 	"license": "MIT",
-	"repository": "sindresorhus/p-limit",
+	"repository": "sindresorhus/p-locate",
 	"funding": "https://github.com/sponsors/sindresorhus",
 	"author": {
 		"name": "Sindre Sorhus",
@@ -22,31 +22,33 @@
 	],
 	"keywords": [
 		"promise",
-		"limit",
-		"limited",
-		"concurrency",
-		"throttle",
-		"throat",
-		"rate",
-		"batch",
-		"ratelimit",
-		"task",
-		"queue",
+		"locate",
+		"find",
+		"finder",
+		"search",
+		"searcher",
+		"test",
+		"array",
+		"collection",
+		"iterable",
+		"iterator",
+		"race",
+		"fulfilled",
+		"fastest",
 		"async",
 		"await",
 		"promises",
 		"bluebird"
 	],
 	"dependencies": {
-		"yocto-queue": "^0.1.0"
+		"p-limit": "^3.0.2"
 	},
 	"devDependencies": {
 		"ava": "^2.4.0",
-		"delay": "^4.4.0",
+		"delay": "^4.1.0",
 		"in-range": "^2.0.0",
-		"random-int": "^2.0.1",
 		"time-span": "^4.0.0",
 		"tsd": "^0.13.1",
-		"xo": "^0.35.0"
+		"xo": "^0.32.1"
 	}
 }
