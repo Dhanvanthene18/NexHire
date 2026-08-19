@@ -1,24 +1,15 @@
-# PostCSS
+# prelude.ls [![Build Status](https://travis-ci.org/gkz/prelude-ls.png?branch=master)](https://travis-ci.org/gkz/prelude-ls)
 
-<img align="right" width="95" height="95"
-     alt="Philosopher’s stone, logo of PostCSS"
-     src="https://postcss.org/logo.svg">
+is a functionally oriented utility library. It is powerful and flexible. Almost all of its functions are curried. It is written in, and is the recommended base library for, <a href="http://livescript.net">LiveScript</a>.
 
-PostCSS is a tool for transforming styles with JS plugins.
-These plugins can lint your CSS, support variables and mixins,
-transpile future CSS syntax, inline images, and more.
+See **[the prelude.ls site](http://preludels.com)** for examples, a reference, and more.
 
-PostCSS is used by industry leaders including Wikipedia, Twitter, Alibaba,
-and JetBrains. The [Autoprefixer] and [Stylelint] PostCSS plugins are some of the most popular CSS tools.
+You can install via npm `npm install prelude-ls`
 
----
+### Development
 
-<img src="https://cdn.evilmartians.com/badges/logo-no-label.svg" alt="" width="22" height="16" />  PostCSS is built by <b><a href="https://evilmartians.com/>Evil Martians</a></b>, an American design and engineering consultancy for <b>developer tools, AI, and cybersecurity startups</b>.
+`make test` to test
 
----
+`make build` to build `lib` from `src`
 
-[Abstract Syntax Tree]: https://en.wikipedia.org/wiki/Abstract_syntax_tree
-[Evil Martians]: https://evilmartians.com/?utm_source=postcss
-[Autoprefixer]: https://github.com/postcss/autoprefixer
-[Stylelint]: https://stylelint.io/
-[plugins]: https://github.com/postcss/postcss#plugins
+`make build-browser` to build browser versions
