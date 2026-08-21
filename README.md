@@ -1,11 +1,9 @@
-# Rolldown
+# `scheduler`
 
-> Fast Rust-based bundler for JavaScript with Rollup-compatible API
+This is a package for cooperative scheduling in a browser environment. It is currently used internally by React, but we plan to make it more generic.
 
-- ⚡️ Lightning Fast Performance
-- 🔌 Rollup-Compatible APIs
-- ⏩ esbuild Feature Parity
+The public API for this package is not yet finalized.
 
-Rolldown is primarily designed to serve as the underlying bundler in [Vite](https://vite.dev/), with the goal to replace esbuild and Rollup with one unified build tool. Although designed for Vite, Rolldown is also fully capable of being used as a standalone, general-purpose bundler. It can serve as a drop-in replacement for Rollup in most cases, and can also be used as an esbuild alternative when better chunking control is needed.
+### Thanks
 
-[Read the Docs to Learn More](https://rolldown.rs).
+The React team thanks [Anton Podviaznikov](https://podviaznikov.com/) for donating the `scheduler` package name.
