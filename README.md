@@ -1,60 +1,11 @@
-# `react-dom`
+# Rolldown
 
-This package serves as the entry point to the DOM and server renderers for React. It is intended to be paired with the generic React package, which is shipped as `react` to npm.
+> Fast Rust-based bundler for JavaScript with Rollup-compatible API
 
-## Installation
+- ⚡️ Lightning Fast Performance
+- 🔌 Rollup-Compatible APIs
+- ⏩ esbuild Feature Parity
 
-```sh
-npm install react react-dom
-```
+Rolldown is primarily designed to serve as the underlying bundler in [Vite](https://vite.dev/), with the goal to replace esbuild and Rollup with one unified build tool. Although designed for Vite, Rolldown is also fully capable of being used as a standalone, general-purpose bundler. It can serve as a drop-in replacement for Rollup in most cases, and can also be used as an esbuild alternative when better chunking control is needed.
 
-## Usage
-
-### In the browser
-
-```js
-import { createRoot } from 'react-dom/client';
-
-function App() {
-  return <div>Hello World</div>;
-}
-
-const root = createRoot(document.getElementById('root'));
-root.render(<App />);
-```
-
-### On the server
-
-```js
-import { renderToPipeableStream } from 'react-dom/server';
-
-function App() {
-  return <div>Hello World</div>;
-}
-
-function handleRequest(res) {
-  // ... in your server handler ...
-  const stream = renderToPipeableStream(<App />, {
-    onShellReady() {
-      res.statusCode = 200;
-      res.setHeader('Content-type', 'text/html');
-      stream.pipe(res);
-    },
-    // ...
-  });
-}
-```
-
-## API
-
-### `react-dom`
-
-See https://react.dev/reference/react-dom
-
-### `react-dom/client`
-
-See https://react.dev/reference/react-dom/client
-
-### `react-dom/server`
-
-See https://react.dev/reference/react-dom/server
+[Read the Docs to Learn More](https://rolldown.rs).
