@@ -1,34 +1,35 @@
 {
-	"name": "shebang-command",
-	"version": "2.0.0",
-	"description": "Get the command from a shebang",
+	"name": "shebang-regex",
+	"version": "3.0.0",
+	"description": "Regular expression for matching a shebang line",
 	"license": "MIT",
-	"repository": "kevva/shebang-command",
+	"repository": "sindresorhus/shebang-regex",
 	"author": {
-		"name": "Kevin Mårtensson",
-		"email": "kevinmartensson@gmail.com",
-		"url": "github.com/kevva"
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
 	},
 	"engines": {
 		"node": ">=8"
 	},
 	"scripts": {
-		"test": "xo && ava"
+		"test": "xo && ava && tsd"
 	},
 	"files": [
-		"index.js"
+		"index.js",
+		"index.d.ts"
 	],
 	"keywords": [
-		"cmd",
-		"command",
-		"parse",
-		"shebang"
+		"regex",
+		"regexp",
+		"shebang",
+		"match",
+		"test",
+		"line"
 	],
-	"dependencies": {
-		"shebang-regex": "^3.0.0"
-	},
 	"devDependencies": {
-		"ava": "^2.3.0",
+		"ava": "^1.4.1",
+		"tsd": "^0.7.2",
 		"xo": "^0.24.0"
 	}
 }

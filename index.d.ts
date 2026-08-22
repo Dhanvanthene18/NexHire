@@ -1,53 +1,22 @@
-declare namespace pLocate {
-	interface Options {
-		/**
-		Number of concurrently pending promises returned by `tester`. Minimum: `1`.
-
-		@default Infinity
-		*/
-		readonly concurrency?: number;
-
-		/**
-		Preserve `input` order when searching.
-
-		Disable this to improve performance if you don't care about the order.
-
-		@default true
-		*/
-		readonly preserveOrder?: boolean;
-	}
-}
-
 /**
-Get the first fulfilled promise that satisfies the provided testing function.
-
-@param input - An iterable of promises/values to test.
-@param tester - This function will receive resolved values from `input` and is expected to return a `Promise<boolean>` or `boolean`.
-@returns A `Promise` that is fulfilled when `tester` resolves to `true` or the iterable is done, or rejects if any of the promises reject. The fulfilled value is the current iterable value or `undefined` if `tester` never resolved to `true`.
+Regular expression for matching a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) line.
 
 @example
 ```
-import pathExists = require('path-exists');
-import pLocate = require('p-locate');
+import shebangRegex = require('shebang-regex');
 
-const files = [
-	'unicorn.png',
-	'rainbow.png', // Only this one actually exists on disk
-	'pony.png'
-];
+const string = '#!/usr/bin/env node\nconsole.log("unicorns");';
 
-(async () => {
-	const foundPath = await pLocate(files, file => pathExists(file));
+shebangRegex.test(string);
+//=> true
 
-	console.log(foundPath);
-	//=> 'rainbow'
-})();
+shebangRegex.exec(string)[0];
+//=> '#!/usr/bin/env node'
+
+shebangRegex.exec(string)[1];
+//=> '/usr/bin/env node'
 ```
 */
-declare function pLocate<ValueType>(
-	input: Iterable<PromiseLike<ValueType> | ValueType>,
-	tester: (element: ValueType) => PromiseLike<boolean> | boolean,
-	options?: pLocate.Options
-): Promise<ValueType | undefined>;
+declare const shebangRegex: RegExp;
 
-export = pLocate;
+export = shebangRegex;
