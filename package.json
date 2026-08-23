@@ -1,39 +1,40 @@
 {
-  "name": "type-check",
-  "version": "0.4.0",
-  "author": "George Zahariev <z@georgezahariev.com>",
-  "description": "type-check allows you to check the types of JavaScript values at runtime with a Haskell like type syntax.",
-  "homepage": "https://github.com/gkz/type-check",
+  "name": "update-browserslist-db",
+  "version": "1.2.3",
+  "description": "CLI tool to update caniuse-lite to refresh target browsers from Browserslist config",
   "keywords": [
-    "type",
-    "check",
-    "checking",
-    "library"
+    "caniuse",
+    "browsers",
+    "target"
   ],
-  "files": [
-    "lib",
-    "README.md",
-    "LICENSE"
+  "funding": [
+    {
+      "type": "opencollective",
+      "url": "https://opencollective.com/browserslist"
+    },
+    {
+      "type": "tidelift",
+      "url": "https://tidelift.com/funding/github/npm/browserslist"
+    },
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/ai"
+    }
   ],
-  "main": "./lib/",
-  "bugs": "https://github.com/gkz/type-check/issues",
+  "author": "Andrey Sitnik <andrey@sitnik.ru>",
   "license": "MIT",
-  "engines": {
-    "node": ">= 0.8.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/gkz/type-check.git"
-  },
-  "scripts": {
-    "test": "make test"
+  "repository": "browserslist/update-db",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
   },
   "dependencies": {
-    "prelude-ls": "^1.2.1"
+    "escalade": "^3.2.0",
+    "picocolors": "^1.1.1"
   },
-  "devDependencies": {
-    "livescript": "^1.6.0",
-    "mocha": "^7.1.1",
-    "browserify": "^16.5.1"
-  }
+  "peerDependencies": {
+    "browserslist": ">= 4.21.0"
+  },
+  "bin": "cli.js"
 }
