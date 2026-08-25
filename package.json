@@ -1,43 +1,77 @@
 {
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
-  "name": "which",
-  "description": "Like which(1) unix command. Find the first instance of an executable in the PATH.",
-  "version": "2.0.2",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/isaacs/node-which.git"
+  "name": "word-wrap",
+  "description": "Wrap words to a specified length.",
+  "version": "1.2.5",
+  "homepage": "https://github.com/jonschlinkert/word-wrap",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "contributors": [
+    "Danilo Sampaio <danilo.sampaio@gmail.com> (localhost:8080)",
+    "Fede Ramirez <i@2fd.me> (https://2fd.github.io)",
+    "Joe Hildebrand <joe-github@cursive.net> (https://twitter.com/hildjj)",
+    "Jon Schlinkert <jon.schlinkert@sellside.com> (http://twitter.com/jonschlinkert)",
+    "Todd Kennedy (https://tck.io)",
+    "Waldemar Reusch (https://github.com/lordvlad)",
+    "Wolfgang Faust (http://www.linestarve.com)",
+    "Zach Hale <zachhale@gmail.com> (http://zachhale.com)"
+  ],
+  "repository": "jonschlinkert/word-wrap",
+  "bugs": {
+    "url": "https://github.com/jonschlinkert/word-wrap/issues"
   },
-  "main": "which.js",
-  "bin": {
-    "node-which": "./bin/node-which"
-  },
-  "license": "ISC",
-  "dependencies": {
-    "isexe": "^2.0.0"
-  },
-  "devDependencies": {
-    "mkdirp": "^0.5.0",
-    "rimraf": "^2.6.2",
-    "tap": "^14.6.9"
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.0"
   },
   "scripts": {
-    "test": "tap",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "prepublish": "npm run changelog",
-    "prechangelog": "bash gen-changelog.sh",
-    "changelog": "git add CHANGELOG.md",
-    "postchangelog": "git commit -m 'update changelog - '${npm_package_version}",
-    "postpublish": "git push origin --follow-tags"
+    "test": "mocha"
   },
-  "files": [
-    "which.js",
-    "bin/node-which"
+  "devDependencies": {
+    "gulp-format-md": "^0.1.11",
+    "mocha": "^3.2.0"
+  },
+  "keywords": [
+    "break",
+    "carriage",
+    "line",
+    "new-line",
+    "newline",
+    "return",
+    "soft",
+    "text",
+    "word",
+    "word-wrap",
+    "words",
+    "wrap"
   ],
-  "tap": {
-    "check-coverage": true
-  },
-  "engines": {
-    "node": ">= 8"
+  "typings": "index.d.ts",
+  "verb": {
+    "toc": false,
+    "layout": "default",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "lint": {
+      "reflinks": true
+    },
+    "related": {
+      "list": [
+        "common-words",
+        "shuffle-words",
+        "unique-words",
+        "wordcount"
+      ]
+    },
+    "reflinks": [
+      "verb",
+      "verb-generate-readme"
+    ]
   }
 }
