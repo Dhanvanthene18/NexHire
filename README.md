@@ -1,201 +1,204 @@
-# word-wrap [![NPM version](https://img.shields.io/npm/v/word-wrap.svg?style=flat)](https://www.npmjs.com/package/word-wrap) [![NPM monthly downloads](https://img.shields.io/npm/dm/word-wrap.svg?style=flat)](https://npmjs.org/package/word-wrap) [![NPM total downloads](https://img.shields.io/npm/dt/word-wrap.svg?style=flat)](https://npmjs.org/package/word-wrap) [![Linux Build Status](https://img.shields.io/travis/jonschlinkert/word-wrap.svg?style=flat&label=Travis)](https://travis-ci.org/jonschlinkert/word-wrap)
+# yallist
 
-> Wrap words to a specified length.
+Yet Another Linked List
 
-Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
+There are many doubly-linked list implementations like it, but this
+one is mine.
 
-## Install
+For when an array would be too big, and a Map can't be iterated in
+reverse order.
 
-Install with [npm](https://www.npmjs.com/):
 
-```sh
-$ npm install --save word-wrap
+[![Build Status](https://travis-ci.org/isaacs/yallist.svg?branch=master)](https://travis-ci.org/isaacs/yallist) [![Coverage Status](https://coveralls.io/repos/isaacs/yallist/badge.svg?service=github)](https://coveralls.io/github/isaacs/yallist)
+
+## basic usage
+
+```javascript
+var yallist = require('yallist')
+var myList = yallist.create([1, 2, 3])
+myList.push('foo')
+myList.unshift('bar')
+// of course pop() and shift() are there, too
+console.log(myList.toArray()) // ['bar', 1, 2, 3, 'foo']
+myList.forEach(function (k) {
+  // walk the list head to tail
+})
+myList.forEachReverse(function (k, index, list) {
+  // walk the list tail to head
+})
+var myDoubledList = myList.map(function (k) {
+  return k + k
+})
+// now myDoubledList contains ['barbar', 2, 4, 6, 'foofoo']
+// mapReverse is also a thing
+var myDoubledListReverse = myList.mapReverse(function (k) {
+  return k + k
+}) // ['foofoo', 6, 4, 2, 'barbar']
+
+var reduced = myList.reduce(function (set, entry) {
+  set += entry
+  return set
+}, 'start')
+console.log(reduced) // 'startfoo123bar'
 ```
 
-## Usage
+## api
 
-```js
-var wrap = require('word-wrap');
+The whole API is considered "public".
 
-wrap('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
-```
+Functions with the same name as an Array method work more or less the
+same way.
 
-Results in:
+There's reverse versions of most things because that's the point.
 
-```
-  Lorem ipsum dolor sit amet, consectetur adipiscing
-  elit, sed do eiusmod tempor incididunt ut labore
-  et dolore magna aliqua. Ut enim ad minim veniam,
-  quis nostrud exercitation ullamco laboris nisi ut
-  aliquip ex ea commodo consequat.
-```
+### Yallist
 
-## Options
+Default export, the class that holds and manages a list.
 
-![image](https://cloud.githubusercontent.com/assets/383994/6543728/7a381c08-c4f6-11e4-8b7d-b6ba197569c9.png)
+Call it with either a forEach-able (like an array) or a set of
+arguments, to initialize the list.
 
-### options.width
+The Array-ish methods all act like you'd expect.  No magic length,
+though, so if you change that it won't automatically prune or add
+empty spots.
 
-Type: `Number`
+### Yallist.create(..)
 
-Default: `50`
+Alias for Yallist function.  Some people like factories.
 
-The width of the text before wrapping to a new line.
+#### yallist.head
 
-**Example:**
+The first node in the list
 
-```js
-wrap(str, {width: 60});
-```
+#### yallist.tail
 
-### options.indent
+The last node in the list
 
-Type: `String`
+#### yallist.length
 
-Default: `` (two spaces)
+The number of nodes in the list.  (Change this at your peril.  It is
+not magic like Array length.)
 
-The string to use at the beginning of each line.
+#### yallist.toArray()
 
-**Example:**
+Convert the list to an array.
 
-```js
-wrap(str, {indent: '      '});
-```
+#### yallist.forEach(fn, [thisp])
 
-### options.newline
+Call a function on each item in the list.
 
-Type: `String`
+#### yallist.forEachReverse(fn, [thisp])
 
-Default: `\n`
+Call a function on each item in the list, in reverse order.
 
-The string to use at the end of each line.
+#### yallist.get(n)
 
-**Example:**
+Get the data at position `n` in the list.  If you use this a lot,
+probably better off just using an Array.
 
-```js
-wrap(str, {newline: '\n\n'});
-```
+#### yallist.getReverse(n)
 
-### options.escape
+Get the data at position `n`, counting from the tail.
 
-Type: `function`
+#### yallist.map(fn, thisp)
 
-Default: `function(str){return str;}`
+Create a new Yallist with the result of calling the function on each
+item.
 
-An escape function to run on each line after splitting them.
+#### yallist.mapReverse(fn, thisp)
 
-**Example:**
+Same as `map`, but in reverse.
 
-```js
-var xmlescape = require('xml-escape');
-wrap(str, {
-  escape: function(string){
-    return xmlescape(string);
-  }
-});
-```
+#### yallist.pop()
 
-### options.trim
+Get the data from the list tail, and remove the tail from the list.
 
-Type: `Boolean`
+#### yallist.push(item, ...)
 
-Default: `false`
+Insert one or more items to the tail of the list.
 
-Trim trailing whitespace from the returned string. This option is included since `.trim()` would also strip the leading indentation from the first line.
+#### yallist.reduce(fn, initialValue)
 
-**Example:**
+Like Array.reduce.
 
-```js
-wrap(str, {trim: true});
-```
+#### yallist.reduceReverse
 
-### options.cut
+Like Array.reduce, but in reverse.
 
-Type: `Boolean`
+#### yallist.reverse
 
-Default: `false`
+Reverse the list in place.
 
-Break a word between any two letters when the word is longer than the specified width.
+#### yallist.shift()
 
-**Example:**
+Get the data from the list head, and remove the head from the list.
 
-```js
-wrap(str, {cut: true});
-```
+#### yallist.slice([from], [to])
 
-## About
+Just like Array.slice, but returns a new Yallist.
 
-<details>
-<summary><strong>Contributing</strong></summary>
+#### yallist.sliceReverse([from], [to])
 
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+Just like yallist.slice, but the result is returned in reverse.
 
-</details>
+#### yallist.toArray()
 
-<details>
-<summary><strong>Running Tests</strong></summary>
+Create an array representation of the list.
 
-Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+#### yallist.toArrayReverse()
 
-```sh
-$ npm install && npm test
-```
+Create a reversed array representation of the list.
 
-</details>
+#### yallist.unshift(item, ...)
 
-<details>
-<summary><strong>Building docs</strong></summary>
+Insert one or more items to the head of the list.
 
-_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+#### yallist.unshiftNode(node)
 
-To generate the readme, run the following command:
+Move a Node object to the front of the list.  (That is, pull it out of
+wherever it lives, and make it the new head.)
 
-```sh
-$ npm install -g verbose/verb#dev verb-generate-readme && verb
-```
+If the node belongs to a different list, then that list will remove it
+first.
 
-</details>
+#### yallist.pushNode(node)
 
-### Related projects
+Move a Node object to the end of the list.  (That is, pull it out of
+wherever it lives, and make it the new tail.)
 
-You might also be interested in these projects:
+If the node belongs to a list already, then that list will remove it
+first.
 
-* [common-words](https://www.npmjs.com/package/common-words): Updated list (JSON) of the 100 most common words in the English language. Useful for… [more](https://github.com/jonschlinkert/common-words) | [homepage](https://github.com/jonschlinkert/common-words "Updated list (JSON) of the 100 most common words in the English language. Useful for excluding these words from arrays.")
-* [shuffle-words](https://www.npmjs.com/package/shuffle-words): Shuffle the words in a string and optionally the letters in each word using the… [more](https://github.com/jonschlinkert/shuffle-words) | [homepage](https://github.com/jonschlinkert/shuffle-words "Shuffle the words in a string and optionally the letters in each word using the Fisher-Yates algorithm. Useful for creating test fixtures, benchmarking samples, etc.")
-* [unique-words](https://www.npmjs.com/package/unique-words): Returns an array of unique words, or the number of occurrences of each word in… [more](https://github.com/jonschlinkert/unique-words) | [homepage](https://github.com/jonschlinkert/unique-words "Returns an array of unique words, or the number of occurrences of each word in a string or list.")
-* [wordcount](https://www.npmjs.com/package/wordcount): Count the words in a string. Support for english, CJK and Cyrillic. | [homepage](https://github.com/jonschlinkert/wordcount "Count the words in a string. Support for english, CJK and Cyrillic.")
+#### yallist.removeNode(node)
 
-### Contributors
+Remove a node from the list, preserving referential integrity of head
+and tail and other nodes.
 
-| **Commits** | **Contributor** |  
-| --- | --- |  
-| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
-| 7  | [OlafConijn](https://github.com/OlafConijn) |  
-| 3  | [doowb](https://github.com/doowb) |  
-| 2  | [aashutoshrathi](https://github.com/aashutoshrathi) |  
-| 2  | [lordvlad](https://github.com/lordvlad) |  
-| 2  | [hildjj](https://github.com/hildjj) |  
-| 1  | [danilosampaio](https://github.com/danilosampaio) |  
-| 1  | [2fd](https://github.com/2fd) |  
-| 1  | [leonard-thieu](https://github.com/leonard-thieu) |  
-| 1  | [mohd-akram](https://github.com/mohd-akram) |  
-| 1  | [toddself](https://github.com/toddself) |  
-| 1  | [wolfgang42](https://github.com/wolfgang42) |  
-| 1  | [zachhale](https://github.com/zachhale) |  
+Will throw an error if you try to have a list remove a node that
+doesn't belong to it.
 
-### Author
+### Yallist.Node
 
-**Jon Schlinkert**
+The class that holds the data and is actually the list.
 
-* [GitHub Profile](https://github.com/jonschlinkert)
-* [Twitter Profile](https://twitter.com/jonschlinkert)
-* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+Call with `var n = new Node(value, previousNode, nextNode)`
 
-### License
+Note that if you do direct operations on Nodes themselves, it's very
+easy to get into weird states where the list is broken.  Be careful :)
 
-Copyright © 2023, [Jon Schlinkert](https://github.com/jonschlinkert).
-Released under the [MIT License](LICENSE).
+#### node.next
 
-***
+The next node in the list.
 
-_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on July 22, 2023._
+#### node.prev
+
+The previous node in the list.
+
+#### node.value
+
+The data the node contains.
+
+#### node.list
+
+The list to which this node belongs.  (Null if it does not belong to
+any list.)
