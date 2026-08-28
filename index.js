@@ -1,61 +1,68 @@
-/*!
- * word-wrap <https://github.com/jonschlinkert/word-wrap>
- *
- * Copyright (c) 2014-2023, Jon Schlinkert.
- * Released under the MIT License.
- */
+class Node {
+	/// value;
+	/// next;
 
-function trimEnd(str) {
-  let lastCharPos = str.length - 1;
-  let lastChar = str[lastCharPos];
-  while(lastChar === ' ' || lastChar === '\t') {
-    lastChar = str[--lastCharPos];
-  }
-  return str.substring(0, lastCharPos + 1);
+	constructor(value) {
+		this.value = value;
+
+		// TODO: Remove this when targeting Node.js 12.
+		this.next = undefined;
+	}
 }
 
-function trimTabAndSpaces(str) {
-  const lines = str.split('\n');
-  const trimmedLines = lines.map((line) => trimEnd(line));
-  return trimmedLines.join('\n');
+class Queue {
+	// TODO: Use private class fields when targeting Node.js 12.
+	// #_head;
+	// #_tail;
+	// #_size;
+
+	constructor() {
+		this.clear();
+	}
+
+	enqueue(value) {
+		const node = new Node(value);
+
+		if (this._head) {
+			this._tail.next = node;
+			this._tail = node;
+		} else {
+			this._head = node;
+			this._tail = node;
+		}
+
+		this._size++;
+	}
+
+	dequeue() {
+		const current = this._head;
+		if (!current) {
+			return;
+		}
+
+		this._head = this._head.next;
+		this._size--;
+		return current.value;
+	}
+
+	clear() {
+		this._head = undefined;
+		this._tail = undefined;
+		this._size = 0;
+	}
+
+	get size() {
+		return this._size;
+	}
+
+	* [Symbol.iterator]() {
+		let current = this._head;
+
+		while (current) {
+			yield current.value;
+			current = current.next;
+		}
+	}
 }
 
-module.exports = function(str, options) {
-  options = options || {};
-  if (str == null) {
-    return str;
-  }
-
-  var width = options.width || 50;
-  var indent = (typeof options.indent === 'string')
-    ? options.indent
-    : '  ';
-
-  var newline = options.newline || '\n' + indent;
-  var escape = typeof options.escape === 'function'
-    ? options.escape
-    : identity;
-
-  var regexString = '.{1,' + width + '}';
-  if (options.cut !== true) {
-    regexString += '([\\s\u200B]+|$)|[^\\s\u200B]+?([\\s\u200B]+|$)';
-  }
-
-  var re = new RegExp(regexString, 'g');
-  var lines = str.match(re) || [];
-  var result = indent + lines.map(function(line) {
-    if (line.slice(-1) === '\n') {
-      line = line.slice(0, line.length - 1);
-    }
-    return escape(line);
-  }).join(newline);
-
-  if (options.trim === true) {
-    result = trimTabAndSpaces(result);
-  }
-  return result;
-};
-
-function identity(str) {
-  return str;
-}
+module.exports = Queue;
