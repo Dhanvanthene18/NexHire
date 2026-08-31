@@ -1,1 +1,3 @@
-export * from "../v4/locales/index.cjs";
+import * as z from "../v4/mini/external.cjs";
+export * from "../v4/mini/external.cjs";
+export { z };
