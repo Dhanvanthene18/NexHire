@@ -1,72 +1,70 @@
 {
-  "name": "json5",
-  "version": "2.2.3",
-  "description": "JSON for Humans",
-  "main": "lib/index.js",
-  "module": "dist/index.mjs",
-  "bin": "lib/cli.js",
-  "browser": "dist/index.js",
-  "types": "lib/index.d.ts",
+  "name": "tinyglobby",
+  "version": "0.2.17",
+  "description": "A fast and minimal alternative to globby and fast-glob",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
   "files": [
-    "lib/",
-    "dist/"
+    "dist"
   ],
-  "engines": {
-    "node": ">=6"
-  },
-  "scripts": {
-    "build": "rollup -c",
-    "build-package": "node build/package.js",
-    "build-unicode": "node build/unicode.js",
-    "coverage": "tap --coverage-report html test",
-    "lint": "eslint --fix .",
-    "lint-report": "eslint .",
-    "prepublishOnly": "npm run production",
-    "preversion": "npm run production",
-    "production": "run-s test build",
-    "tap": "tap -Rspec --100 test",
-    "test": "run-s lint-report tap",
-    "version": "npm run build-package && git add package.json5"
-  },
+  "author": "Superchupu",
+  "license": "MIT",
+  "keywords": [
+    "glob",
+    "patterns",
+    "tiny",
+    "fast"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/json5/json5.git"
+    "url": "git+https://github.com/SuperchupuDev/tinyglobby.git"
   },
-  "keywords": [
-    "json",
-    "json5",
-    "es5",
-    "es2015",
-    "ecmascript"
-  ],
-  "author": "Aseem Kishore <aseem.kishore@gmail.com>",
-  "contributors": [
-    "Max Nanasy <max.nanasy@gmail.com>",
-    "Andrew Eisenberg <andrew@eisenberg.as>",
-    "Jordan Tucker <jordanbtucker@gmail.com>"
-  ],
-  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/json5/json5/issues"
+    "url": "https://github.com/SuperchupuDev/tinyglobby/issues"
   },
-  "homepage": "http://json5.org/",
+  "homepage": "https://superchupu.dev/tinyglobby",
+  "funding": {
+    "url": "https://github.com/sponsors/SuperchupuDev"
+  },
+  "dependencies": {
+    "fdir": "^6.5.0",
+    "picomatch": "^4.0.4"
+  },
   "devDependencies": {
-    "core-js": "^2.6.5",
-    "eslint": "^5.15.3",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.16.0",
-    "eslint-plugin-node": "^8.0.1",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "npm-run-all": "^4.1.5",
-    "regenerate": "^1.4.0",
-    "rollup": "^0.64.1",
-    "rollup-plugin-buble": "^0.19.6",
-    "rollup-plugin-commonjs": "^9.2.1",
-    "rollup-plugin-node-resolve": "^3.4.0",
-    "rollup-plugin-terser": "^1.0.1",
-    "sinon": "^6.3.5",
-    "tap": "^12.6.0",
-    "unicode-10.0.0": "^0.7.5"
+    "@biomejs/biome": "^2.4.16",
+    "@types/node": "^25.9.1",
+    "@types/picomatch": "^4.0.3",
+    "fast-glob": "^3.3.3",
+    "fs-fixture": "^2.14.0",
+    "glob": "^13.0.6",
+    "tinybench": "^6.0.2",
+    "tsdown": "^0.22.1",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "scripts": {
+    "bench": "node benchmark/bench.ts",
+    "bench:setup": "node benchmark/setup.ts",
+    "build": "tsdown",
+    "check": "biome check",
+    "check:fix": "biome check --write --unsafe",
+    "format": "biome format --write",
+    "lint": "biome lint",
+    "test": "node --test \"test/**/*.ts\"",
+    "test:coverage": "node --test --experimental-test-coverage \"test/**/*.ts\"",
+    "test:only": "node --test --test-only \"test/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   }
 }
