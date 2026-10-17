@@ -1,134 +1,122 @@
-<p align="center">
-  <a href="https://gulpjs.com">
-    <img height="257" width="114" src="https://raw.githubusercontent.com/gulpjs/artwork/master/gulp-2x.png">
-  </a>
-</p>
+iMurmurHash.js
+==============
 
-# glob-parent
+An incremental implementation of the MurmurHash3 (32-bit) hashing algorithm for JavaScript based on [Gary Court's implementation](https://github.com/garycourt/murmurhash-js) with [kazuyukitanimura's modifications](https://github.com/kazuyukitanimura/murmurhash-js).
 
-[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][ci-image]][ci-url] [![Coveralls Status][coveralls-image]][coveralls-url]
+This version works significantly faster than the non-incremental version if you need to hash many small strings into a single hash, since string concatenation (to build the single string to pass the non-incremental version) is fairly costly. In one case tested, using the incremental version was about 50% faster than concatenating 5-10 strings and then hashing.
 
-Extract the non-magic parent path from a glob string.
+Installation
+------------
 
-## Usage
+To use iMurmurHash in the browser, [download the latest version](https://raw.github.com/jensyt/imurmurhash-js/master/imurmurhash.min.js) and include it as a script on your site.
 
-```js
-var globParent = require('glob-parent');
-
-globParent('path/to/*.js'); // 'path/to'
-globParent('/root/path/to/*.js'); // '/root/path/to'
-globParent('/*.js'); // '/'
-globParent('*.js'); // '.'
-globParent('**/*.js'); // '.'
-globParent('path/{to,from}'); // 'path'
-globParent('path/!(to|from)'); // 'path'
-globParent('path/?(to|from)'); // 'path'
-globParent('path/+(to|from)'); // 'path'
-globParent('path/*(to|from)'); // 'path'
-globParent('path/@(to|from)'); // 'path'
-globParent('path/**/*'); // 'path'
-
-// if provided a non-glob path, returns the nearest dir
-globParent('path/foo/bar.js'); // 'path/foo'
-globParent('path/foo/'); // 'path/foo'
-globParent('path/foo'); // 'path' (see issue #3 for details)
+```html
+<script type="text/javascript" src="/scripts/imurmurhash.min.js"></script>
+<script>
+// Your code here, access iMurmurHash using the global object MurmurHash3
+</script>
 ```
 
-## API
+---
 
-### `globParent(maybeGlobString, [options])`
+To use iMurmurHash in Node.js, install the module using NPM:
 
-Takes a string and returns the part of the path before the glob begins. Be aware of Escaping rules and Limitations below.
-
-#### options
-
-```js
-{
-  // Disables the automatic conversion of slashes for Windows
-  flipBackslashes: true;
-}
+```bash
+npm install imurmurhash
 ```
 
-## Escaping
+Then simply include it in your scripts:
 
-The following characters have special significance in glob patterns and must be escaped if you want them to be treated as regular path characters:
-
-- `?` (question mark) unless used as a path segment alone
-- `*` (asterisk)
-- `|` (pipe)
-- `(` (opening parenthesis)
-- `)` (closing parenthesis)
-- `{` (opening curly brace)
-- `}` (closing curly brace)
-- `[` (opening bracket)
-- `]` (closing bracket)
-
-**Example**
-
-```js
-globParent('foo/[bar]/'); // 'foo'
-globParent('foo/\\[bar]/'); // 'foo/[bar]'
+```javascript
+MurmurHash3 = require('imurmurhash');
 ```
 
-## Limitations
+Quick Example
+-------------
 
-### Braces & Brackets
+```javascript
+// Create the initial hash
+var hashState = MurmurHash3('string');
 
-This library attempts a quick and imperfect method of determining which path
-parts have glob magic without fully parsing/lexing the pattern. There are some
-advanced use cases that can trip it up, such as nested braces where the outer
-pair is escaped and the inner one contains a path separator. If you find
-yourself in the unlikely circumstance of being affected by this or need to
-ensure higher-fidelity glob handling in your library, it is recommended that you
-pre-process your input with [expand-braces] and/or [expand-brackets].
+// Incrementally add text
+hashState.hash('more strings');
+hashState.hash('even more strings');
 
-### Windows
+// All calls can be chained if desired
+hashState.hash('and').hash('some').hash('more');
 
-Backslashes are not valid path separators for globs. If a path with backslashes
-is provided anyway, for simple cases, glob-parent will replace the path
-separator for you and return the non-glob parent path (now with
-forward-slashes, which are still valid as Windows path separators).
-
-This cannot be used in conjunction with escape characters.
-
-```js
-// BAD
-globParent('C:\\Program Files \\(x86\\)\\*.ext'); // 'C:/Program Files /(x86/)'
-
-// GOOD
-globParent('C:/Program Files\\(x86\\)/*.ext'); // 'C:/Program Files (x86)'
+// Get a result
+hashState.result();
+// returns 0xe4ccfe6b
 ```
 
-If you are using escape characters for a pattern without path parts (i.e.
-relative to `cwd`), prefix with `./` to avoid confusing glob-parent.
+Functions
+---------
 
-```js
-// BAD
-globParent('foo \\[bar]'); // 'foo '
-globParent('foo \\[bar]*'); // 'foo '
+### MurmurHash3 ([string], [seed])
+Get a hash state object, optionally initialized with the given _string_ and _seed_. _Seed_ must be a positive integer if provided. Calling this function without the `new` keyword will return a cached state object that has been reset. This is safe to use as long as the object is only used from a single thread and no other hashes are created while operating on this one. If this constraint cannot be met, you can use `new` to create a new state object. For example:
 
-// GOOD
-globParent('./foo \\[bar]'); // 'foo [bar]'
-globParent('./foo \\[bar]*'); // '.'
+```javascript
+// Use the cached object, calling the function again will return the same
+// object (but reset, so the current state would be lost)
+hashState = MurmurHash3();
+...
+
+// Create a new object that can be safely used however you wish. Calling the
+// function again will simply return a new state object, and no state loss
+// will occur, at the cost of creating more objects.
+hashState = new MurmurHash3();
 ```
 
-## License
+Both methods can be mixed however you like if you have different use cases.
 
-ISC
+---
 
-<!-- prettier-ignore-start -->
-[downloads-image]: https://img.shields.io/npm/dm/glob-parent.svg?style=flat-square
-[npm-url]: https://www.npmjs.com/package/glob-parent
-[npm-image]: https://img.shields.io/npm/v/glob-parent.svg?style=flat-square
+### MurmurHash3.prototype.hash (string)
+Incrementally add _string_ to the hash. This can be called as many times as you want for the hash state object, including after a call to `result()`. Returns `this` so calls can be chained.
 
-[ci-url]: https://github.com/gulpjs/glob-parent/actions?query=workflow:dev
-[ci-image]: https://img.shields.io/github/workflow/status/gulpjs/glob-parent/dev?style=flat-square
+---
 
-[coveralls-url]: https://coveralls.io/r/gulpjs/glob-parent
-[coveralls-image]: https://img.shields.io/coveralls/gulpjs/glob-parent/master.svg?style=flat-square
-<!-- prettier-ignore-end -->
+### MurmurHash3.prototype.result ()
+Get the result of the hash as a 32-bit positive integer. This performs the tail and finalizer portions of the algorithm, but does not store the result in the state object. This means that it is perfectly safe to get results and then continue adding strings via `hash`.
 
-<!-- prettier-ignore-start -->
-[expand-braces]: https://github.com/jonschlinkert/expand-braces
-[expand-brackets]: https://github.com/jonschlinkert/expand-brackets
-<!-- prettier-ignore-end -->
+```javascript
+// Do the whole string at once
+MurmurHash3('this is a test string').result();
+// 0x70529328
+
+// Do part of the string, get a result, then the other part
+var m = MurmurHash3('this is a');
+m.result();
+// 0xbfc4f834
+m.hash(' test string').result();
+// 0x70529328 (same as above)
+```
+
+---
+
+### MurmurHash3.prototype.reset ([seed])
+Reset the state object for reuse, optionally using the given _seed_ (defaults to 0 like the constructor). Returns `this` so calls can be chained.
+
+---
+
+License (MIT)
+-------------
+Copyright (c) 2013 Gary Court, Jens Taylor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
