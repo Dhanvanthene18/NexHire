@@ -1,57 +1,58 @@
-var fs = require('fs')
-var core
-if (process.platform === 'win32' || global.TESTING_WINDOWS) {
-  core = require('./windows.js')
-} else {
-  core = require('./mode.js')
-}
+//TODO: handle reviver/dehydrate function like normal
+//and handle indentation, like normal.
+//if anyone needs this... please send pull request.
 
-module.exports = isexe
-isexe.sync = sync
+exports.stringify = function stringify (o) {
+  if('undefined' == typeof o) return o
 
-function isexe (path, options, cb) {
-  if (typeof options === 'function') {
-    cb = options
-    options = {}
-  }
+  if(o && Buffer.isBuffer(o))
+    return JSON.stringify(':base64:' + o.toString('base64'))
 
-  if (!cb) {
-    if (typeof Promise !== 'function') {
-      throw new TypeError('callback not provided')
-    }
+  if(o && o.toJSON)
+    o =  o.toJSON()
 
-    return new Promise(function (resolve, reject) {
-      isexe(path, options || {}, function (er, is) {
-        if (er) {
-          reject(er)
-        } else {
-          resolve(is)
+  if(o && 'object' === typeof o) {
+    var s = ''
+    var array = Array.isArray(o)
+    s = array ? '[' : '{'
+    var first = true
+
+    for(var k in o) {
+      var ignore = 'function' == typeof o[k] || (!array && 'undefined' === typeof o[k])
+      if(Object.hasOwnProperty.call(o, k) && !ignore) {
+        if(!first)
+          s += ','
+        first = false
+        if (array) {
+          if(o[k] == undefined)
+            s += 'null'
+          else
+            s += stringify(o[k])
+        } else if (o[k] !== void(0)) {
+          s += stringify(k) + ':' + stringify(o[k])
         }
-      })
-    })
-  }
-
-  core(path, options || {}, function (er, is) {
-    // ignore EACCES because that just means we aren't allowed to run it
-    if (er) {
-      if (er.code === 'EACCES' || options && options.ignoreErrors) {
-        er = null
-        is = false
       }
     }
-    cb(er, is)
-  })
+
+    s += array ? ']' : '}'
+
+    return s
+  } else if ('string' === typeof o) {
+    return JSON.stringify(/^:/.test(o) ? ':' + o : o)
+  } else if ('undefined' === typeof o) {
+    return 'null';
+  } else
+    return JSON.stringify(o)
 }
 
-function sync (path, options) {
-  // my kingdom for a filtered catch
-  try {
-    return core.sync(path, options || {})
-  } catch (er) {
-    if (options && options.ignoreErrors || er.code === 'EACCES') {
-      return false
-    } else {
-      throw er
+exports.parse = function (s) {
+  return JSON.parse(s, function (key, value) {
+    if('string' === typeof value) {
+      if(/^:base64:/.test(value))
+        return Buffer.from(value.substring(8), 'base64')
+      else
+        return /^:/.test(value) ? value.substring(1) : value 
     }
-  }
+    return value
+  })
 }
