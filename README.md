@@ -1,51 +1,24 @@
-# isexe
+# json-buffer
 
-Minimal module to check if a file is executable, and a normal file.
+JSON functions that can convert buffers!
 
-Uses `fs.stat` and tests against the `PATHEXT` environment variable on
-Windows.
+[![build status](https://secure.travis-ci.org/dominictarr/json-buffer.png)](http://travis-ci.org/dominictarr/json-buffer)
 
-## USAGE
+[![testling badge](https://ci.testling.com/dominictarr/json-buffer.png)](https://ci.testling.com/dominictarr/json-buffer)
 
-```javascript
-var isexe = require('isexe')
-isexe('some-file-name', function (err, isExe) {
-  if (err) {
-    console.error('probably file does not exist or something', err)
-  } else if (isExe) {
-    console.error('this thing can be run')
-  } else {
-    console.error('cannot be run')
-  }
-})
+JSON mangles buffers by converting to an array...
+which isn't helpful. json-buffers converts to base64 instead,
+and deconverts base64 to a buffer.
 
-// same thing but synchronous, throws errors
-var isExe = isexe.sync('some-file-name')
+``` js
+var JSONB = require('json-buffer')
+var Buffer = require('buffer').Buffer
 
-// treat errors as just "not executable"
-isexe('maybe-missing-file', { ignoreErrors: true }, callback)
-var isExe = isexe.sync('maybe-missing-file', { ignoreErrors: true })
+var str = JSONB.stringify(Buffer.from('hello there!'))
+
+console.log(JSONB.parse(str)) //GET a BUFFER back
 ```
 
-## API
+## License
 
-### `isexe(path, [options], [callback])`
-
-Check if the path is executable.  If no callback provided, and a
-global `Promise` object is available, then a Promise will be returned.
-
-Will raise whatever errors may be raised by `fs.stat`, unless
-`options.ignoreErrors` is set to true.
-
-### `isexe.sync(path, [options])`
-
-Same as `isexe` but returns the value and throws any errors raised.
-
-### Options
-
-* `ignoreErrors` Treat all errors as "no, this is not executable", but
-  don't raise them.
-* `uid` Number to use as the user id
-* `gid` Number to use as the group id
-* `pathExt` List of path extensions to use instead of `PATHEXT`
-  environment variable on Windows.
+MIT
