@@ -1,31 +1,34 @@
 {
-  "name": "isexe",
-  "version": "2.0.0",
-  "description": "Minimal module to check if a file is executable.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "devDependencies": {
-    "mkdirp": "^0.5.1",
-    "rimraf": "^2.5.0",
-    "tap": "^10.3.0"
-  },
-  "scripts": {
-    "test": "tap test/*.js --100",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "postpublish": "git push origin --all; git push origin --tags"
-  },
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
-  "license": "ISC",
+  "name": "json-buffer",
+  "description": "JSON parse & stringify that supports binary via bops & base64",
+  "version": "3.0.1",
+  "homepage": "https://github.com/dominictarr/json-buffer",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/isaacs/isexe.git"
+    "url": "git://github.com/dominictarr/json-buffer.git"
   },
-  "keywords": [],
-  "bugs": {
-    "url": "https://github.com/isaacs/isexe/issues"
+  "devDependencies": {
+    "tape": "^4.6.3"
   },
-  "homepage": "https://github.com/isaacs/isexe#readme"
+  "scripts": {
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT",
+  "testling": {
+    "files": "test/*.js",
+    "browsers": [
+      "ie/8..latest",
+      "firefox/17..latest",
+      "firefox/nightly",
+      "chrome/22..latest",
+      "chrome/canary",
+      "opera/12..latest",
+      "opera/next",
+      "safari/5.1..latest",
+      "ipad/6.0..latest",
+      "iphone/6.0..latest",
+      "android-browser/4.2..latest"
+    ]
+  }
 }
