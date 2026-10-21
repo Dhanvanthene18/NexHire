@@ -1,34 +1,39 @@
 {
-  "name": "json-buffer",
-  "description": "JSON parse & stringify that supports binary via bops & base64",
-  "version": "3.0.1",
-  "homepage": "https://github.com/dominictarr/json-buffer",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/dominictarr/json-buffer.git"
-  },
-  "devDependencies": {
-    "tape": "^4.6.3"
-  },
-  "scripts": {
-    "test": "set -e; for t in test/*.js; do node $t; done"
-  },
-  "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
-  "license": "MIT",
-  "testling": {
-    "files": "test/*.js",
-    "browsers": [
-      "ie/8..latest",
-      "firefox/17..latest",
-      "firefox/nightly",
-      "chrome/22..latest",
-      "chrome/canary",
-      "opera/12..latest",
-      "opera/next",
-      "safari/5.1..latest",
-      "ipad/6.0..latest",
-      "iphone/6.0..latest",
-      "android-browser/4.2..latest"
-    ]
-  }
+	"name": "path-exists",
+	"version": "4.0.0",
+	"description": "Check if a path exists",
+	"license": "MIT",
+	"repository": "sindresorhus/path-exists",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=8"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts"
+	],
+	"keywords": [
+		"path",
+		"exists",
+		"exist",
+		"file",
+		"filepath",
+		"fs",
+		"filesystem",
+		"file-system",
+		"access",
+		"stat"
+	],
+	"devDependencies": {
+		"ava": "^1.4.1",
+		"tsd": "^0.7.2",
+		"xo": "^0.24.0"
+	}
 }
