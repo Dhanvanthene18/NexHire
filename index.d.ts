@@ -1,28 +1,22 @@
-declare const pathExists: {
-	/**
-	Check if a path exists.
+/**
+Regular expression for matching a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) line.
 
-	@returns Whether the path exists.
+@example
+```
+import shebangRegex = require('shebang-regex');
 
-	@example
-	```
-	// foo.ts
-	import pathExists = require('path-exists');
+const string = '#!/usr/bin/env node\nconsole.log("unicorns");';
 
-	(async () => {
-		console.log(await pathExists('foo.ts'));
-		//=> true
-	})();
-	```
-	*/
-	(path: string): Promise<boolean>;
+shebangRegex.test(string);
+//=> true
 
-	/**
-	Synchronously check if a path exists.
+shebangRegex.exec(string)[0];
+//=> '#!/usr/bin/env node'
 
-	@returns Whether the path exists.
-	*/
-	sync(path: string): boolean;
-};
+shebangRegex.exec(string)[1];
+//=> '/usr/bin/env node'
+```
+*/
+declare const shebangRegex: RegExp;
 
-export = pathExists;
+export = shebangRegex;
