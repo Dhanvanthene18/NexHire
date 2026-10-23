@@ -1,24 +1,21 @@
-# json-buffer
+# picocolors
 
-JSON functions that can convert buffers!
+The tiniest and the fastest library for terminal output formatting with ANSI colors.
 
-[![build status](https://secure.travis-ci.org/dominictarr/json-buffer.png)](http://travis-ci.org/dominictarr/json-buffer)
+```javascript
+import pc from "picocolors"
 
-[![testling badge](https://ci.testling.com/dominictarr/json-buffer.png)](https://ci.testling.com/dominictarr/json-buffer)
-
-JSON mangles buffers by converting to an array...
-which isn't helpful. json-buffers converts to base64 instead,
-and deconverts base64 to a buffer.
-
-``` js
-var JSONB = require('json-buffer')
-var Buffer = require('buffer').Buffer
-
-var str = JSONB.stringify(Buffer.from('hello there!'))
-
-console.log(JSONB.parse(str)) //GET a BUFFER back
+console.log(
+  pc.green(`How are ${pc.italic(`you`)} doing?`)
+)
 ```
 
-## License
+- **No dependencies.**
+- **14 times** smaller and **2 times** faster than chalk.
+- Used by popular tools like PostCSS, SVGO, Stylelint, and Browserslist.
+- Node.js v6+ & browsers support. Support for both CJS and ESM projects.
+- TypeScript type declarations included.
+- [`NO_COLOR`](https://no-color.org/) friendly.
 
-MIT
+## Docs
+Read **[full docs](https://github.com/alexeyraspopov/picocolors#readme)** on GitHub.
