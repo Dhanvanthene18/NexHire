@@ -1,34 +1,38 @@
 {
-  "name": "lightningcss-win32-x64-msvc",
-  "version": "1.33.0",
-  "license": "MPL-2.0",
-  "description": "A CSS parser, transformer, and minifier written in Rust",
-  "main": "lightningcss.win32-x64-msvc.node",
-  "browserslist": "last 2 versions, not dead",
-  "publishConfig": {
-    "access": "public"
-  },
-  "funding": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/parcel"
+  "name": "convert-source-map",
+  "version": "2.0.0",
+  "description": "Converts a source-map from/to  different formats and allows adding/changing properties.",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test/*.js --color"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/parcel-bundler/lightningcss.git"
+    "url": "git://github.com/thlorenz/convert-source-map.git"
   },
-  "engines": {
-    "node": ">= 12.0.0"
+  "homepage": "https://github.com/thlorenz/convert-source-map",
+  "devDependencies": {
+    "inline-source-map": "~0.6.2",
+    "tap": "~9.0.0"
+  },
+  "keywords": [
+    "convert",
+    "sourcemap",
+    "source",
+    "map",
+    "browser",
+    "debug"
+  ],
+  "author": {
+    "name": "Thorsten Lorenz",
+    "email": "thlorenz@gmx.de",
+    "url": "http://thlorenz.com"
+  },
+  "license": "MIT",
+  "engine": {
+    "node": ">=4"
   },
   "files": [
-    "lightningcss.win32-x64-msvc.node"
-  ],
-  "resolutions": {
-    "lightningcss": "link:."
-  },
-  "os": [
-    "win32"
-  ],
-  "cpu": [
-    "x64"
+    "index.js"
   ]
 }
