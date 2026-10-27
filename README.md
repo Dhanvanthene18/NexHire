@@ -1,206 +1,222 @@
-# convert-source-map [![Build Status][ci-image]][ci-url]
+# eslint-plugin-react-refresh [![npm](https://img.shields.io/npm/v/eslint-plugin-react-refresh)](https://www.npmjs.com/package/eslint-plugin-react-refresh)
 
-Converts a source-map from/to  different formats and allows adding/changing properties.
+Validate that your components can safely be updated with Fast Refresh.
+
+## Explainer
+
+"Fast Refresh", also known as "hot reloading", is a feature in many modern bundlers.
+If you update some React component(s) on disk, then the bundler will know to update only the impacted parts of your page -- without a full page reload.
+
+`eslint-plugin-react-refresh` enforces that your components are structured in a way that integrations such as [react-refresh](https://www.npmjs.com/package/react-refresh) expect.
+
+### Limitations
+
+⚠️ To avoid false positives, by default this plugin is only applied on `tsx` & `jsx` files. See [Options](#options) to run on JS files. ⚠️
+
+The plugin relies on naming conventions (i.e. use PascalCase for components, camelCase for util functions). This is why there are some limitations:
+
+- `export *` are not supported and will be reported as an error
+- Anonymous function are not supported (i.e `export default function() {}`)
+- Class components are not supported
+- All-uppercase function export is considered an error when not using direct named export (ex `const CMS = () => <></>; export { CMS }`)
+
+## Installation
+
+```sh
+npm i -D eslint-plugin-react-refresh
+```
+
+## Usage
+
+This plugin provides a single rule, `react-refresh/only-export-components`. There are multiple ways to enable it.
+
+### Recommended config
 
 ```js
-var convert = require('convert-source-map');
+import { defineConfig } from "eslint/config";
+import { reactRefresh } from "eslint-plugin-react-refresh";
 
-var json = convert
-  .fromComment('//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVpbGQvZm9vLm1pbi5qcyIsInNvdXJjZXMiOlsic3JjL2Zvby5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIvIn0=')
-  .toJSON();
-
-var modified = convert
-  .fromComment('//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYnVpbGQvZm9vLm1pbi5qcyIsInNvdXJjZXMiOlsic3JjL2Zvby5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIvIn0=')
-  .setProperty('sources', [ 'SRC/FOO.JS' ])
-  .toJSON();
-
-console.log(json);
-console.log(modified);
+export default defineConfig(
+  /* Main config */
+  reactRefresh.configs.recommended(),
+);
 ```
+
+### Vite config
+
+This enables the `allowConstantExport` option which is supported by Vite React plugins.
+
+```js
+import { defineConfig } from "eslint/config";
+import { reactRefresh } from "eslint-plugin-react-refresh";
+
+export default defineConfig(
+  /* Main config */
+  reactRefresh.configs.vite(),
+);
+```
+
+### Next config
+
+This allows exports like `fetchCache` and `revalidate` which are used in Page or Layout components and don't trigger a full page reload.
+
+```js
+import { defineConfig } from "eslint/config";
+import { reactRefresh } from "eslint-plugin-react-refresh";
+
+export default defineConfig(
+  /* Main config */
+  reactRefresh.configs.next(),
+);
+```
+
+### Without config
+
+```js
+import { defineConfig } from "eslint/config";
+import { reactRefresh } from "eslint-plugin-react-refresh";
+
+export default defineConfig({
+  // in main config for TSX/JSX source files
+  plugins: {
+    "react-refresh": reactRefresh.plugin,
+  },
+  rules: {
+    "react-refresh/only-export-components": "error",
+  },
+});
+```
+
+## Examples
+
+These examples are from enabling `react-refresh/only-exports-components`.
+
+### Fail
+
+```jsx
+export const foo = () => {};
+export const Bar = () => <></>;
+```
+
+```jsx
+export default function () {}
+export default compose()(MainComponent)
+```
+
+```jsx
+export * from "./foo";
+```
+
+```jsx
+const Tab = () => {};
+export const tabs = [<Tab />, <Tab />];
+```
+
+```jsx
+const App = () => {};
+createRoot(document.getElementById("root")).render(<App />);
+```
+
+### Pass
+
+```jsx
+export default function Foo() {
+  return <></>;
+}
+```
+
+```jsx
+const foo = () => {};
+export const Bar = () => <></>;
+```
+
+```jsx
+import { App } from "./App";
+createRoot(document.getElementById("root")).render(<App />);
+```
+
+## Options
+
+These options are all present on `react-refresh/only-exports-components`.
+
+```ts
+interface Options {
+  extraHOCs?: string[];
+  allowExportNames?: string[];
+  allowConstantExport?: boolean;
+  checkJS?: boolean;
+}
+
+const defaultOptions: Options = {
+  extraHOCs: [],
+  allowExportNames: [],
+  allowConstantExport: false,
+  checkJS: false,
+};
+```
+
+### extraHOCs <small>(v0.5.0)</small>
+
+If you're exporting components wrapped in non built-in React HOC (memo, forwardRef, lazy), you can use this option to avoid false positives.
 
 ```json
-{"version":3,"file":"build/foo.min.js","sources":["src/foo.js"],"names":[],"mappings":"AAAA","sourceRoot":"/"}
-{"version":3,"file":"build/foo.min.js","sources":["SRC/FOO.JS"],"names":[],"mappings":"AAAA","sourceRoot":"/"}
-```
-
-## Upgrading
-
-Prior to v2.0.0, the `fromMapFileComment` and `fromMapFileSource` functions took a String directory path and used that to resolve & read the source map file from the filesystem. However, this made the library limited to nodejs environments and broke on sources with querystrings.
-
-In v2.0.0, you now need to pass a function that does the file reading. It will receive the source filename as a String that you can resolve to a filesystem path, URL, or anything else.
-
-If you are using `convert-source-map` in nodejs and want the previous behavior, you'll use a function like such:
-
-```diff
-+ var fs = require('fs'); // Import the fs module to read a file
-+ var path = require('path'); // Import the path module to resolve a path against your directory
-- var conv = convert.fromMapFileSource(css, '../my-dir');
-+ var conv = convert.fromMapFileSource(css, function (filename) {
-+   return fs.readFileSync(path.resolve('../my-dir', filename), 'utf-8');
-+ });
-```
-
-## API
-
-### fromObject(obj)
-
-Returns source map converter from given object.
-
-### fromJSON(json)
-
-Returns source map converter from given json string.
-
-### fromURI(uri)
-
-Returns source map converter from given uri encoded json string.
-
-### fromBase64(base64)
-
-Returns source map converter from given base64 encoded json string.
-
-### fromComment(comment)
-
-Returns source map converter from given base64 or uri encoded json string prefixed with `//# sourceMappingURL=...`.
-
-### fromMapFileComment(comment, readMap)
-
-Returns source map converter from given `filename` by parsing `//# sourceMappingURL=filename`.
-
-`readMap` must be a function which receives the source map filename and returns either a String or Buffer of the source map (if read synchronously), or a `Promise` containing a String or Buffer of the source map (if read asynchronously).
-
-If `readMap` doesn't return a `Promise`, `fromMapFileComment` will return a source map converter synchronously.
-
-If `readMap` returns a `Promise`, `fromMapFileComment` will also return `Promise`. The `Promise` will be either resolved with the source map converter or rejected with an error.
-
-#### Examples
-
-**Synchronous read in Node.js:**
-
-```js
-var convert = require('convert-source-map');
-var fs = require('fs');
-
-function readMap(filename) {
-  return fs.readFileSync(filename, 'utf8');
+{
+  "react-refresh/only-export-components": [
+    "error",
+    { "extraHOCs": ["observer", "withAuth"] }
+  ]
 }
-
-var json = convert
-  .fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
-  .toJSON();
-console.log(json);
 ```
 
+### allowExportNames <small>(v0.4.4)</small>
 
-**Asynchronous read in Node.js:**
+> Default: `[]`
 
-```js
-var convert = require('convert-source-map');
-var { promises: fs } = require('fs'); // Notice the `promises` import
+If you use a framework that handles HMR of some specific exports, you can use this option to avoid warning for them.
 
-function readMap(filename) {
-  return fs.readFile(filename, 'utf8');
+Example for [Remix](https://remix.run/docs/en/main/discussion/hot-module-replacement#supported-exports):
+
+```json
+{
+  "react-refresh/only-export-components": [
+    "error",
+    { "allowExportNames": ["meta", "links", "headers", "loader", "action"] }
+  ]
 }
-
-var converter = await convert.fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
-var json = converter.toJSON();
-console.log(json);
 ```
 
-**Asynchronous read in the browser:**
+### allowConstantExport <small>(v0.4.0)</small>
 
-```js
-var convert = require('convert-source-map');
+> Default: `false` (`true` in `vite` config)
 
-async function readMap(url) {
-  const res = await fetch(url);
-  return res.text();
+Don't warn when a constant (string, number, boolean, templateLiteral) is exported aside one or more components.
+
+This should be enabled if the fast refresh implementation correctly handles this case (HMR when the constant doesn't change, propagate update to importers when the constant changes.). Vite supports it, PR welcome if you notice other integrations works well.
+
+```json
+{
+  "react-refresh/only-export-components": [
+    "error",
+    { "allowConstantExport": true }
+  ]
 }
-
-const converter = await convert.fromMapFileComment('//# sourceMappingURL=map-file-comment.css.map', readMap)
-var json = converter.toJSON();
-console.log(json);
 ```
 
-### fromSource(source)
+Enabling this option allows code such as the following:
 
-Finds last sourcemap comment in file and returns source map converter or returns `null` if no source map comment was found.
+```jsx
+export const CONSTANT = 3;
+export const Foo = () => <></>;
+```
 
-### fromMapFileSource(source, readMap)
+### checkJS <small>(v0.3.3)</small>
 
-Finds last sourcemap comment in file and returns source map converter or returns `null` if no source map comment was found.
+> Default: `false`
 
-`readMap` must be a function which receives the source map filename and returns either a String or Buffer of the source map (if read synchronously), or a `Promise` containing a String or Buffer of the source map (if read asynchronously).
+If you're using JSX inside `.js` files (which I don't recommend because it forces you to configure every tool you use to switch the parser), you can still use the plugin by enabling this option. To reduce the number of false positive, only files importing `react` are checked.
 
-If `readMap` doesn't return a `Promise`, `fromMapFileSource` will return a source map converter synchronously.
-
-If `readMap` returns a `Promise`, `fromMapFileSource` will also return `Promise`. The `Promise` will be either resolved with the source map converter or rejected with an error.
-
-### toObject()
-
-Returns a copy of the underlying source map.
-
-### toJSON([space])
-
-Converts source map to json string. If `space` is given (optional), this will be passed to
-[JSON.stringify](https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/JSON/stringify) when the
-JSON string is generated.
-
-### toURI()
-
-Converts source map to uri encoded json string.
-
-### toBase64()
-
-Converts source map to base64 encoded json string.
-
-### toComment([options])
-
-Converts source map to an inline comment that can be appended to the source-file.
-
-By default, the comment is formatted like: `//# sourceMappingURL=...`, which you would
-normally see in a JS source file.
-
-When `options.encoding == 'uri'`, the data will be uri encoded, otherwise they will be base64 encoded.
-
-When `options.multiline == true`, the comment is formatted like: `/*# sourceMappingURL=... */`, which you would find in a CSS source file.
-
-### addProperty(key, value)
-
-Adds given property to the source map. Throws an error if property already exists.
-
-### setProperty(key, value)
-
-Sets given property to the source map. If property doesn't exist it is added, otherwise its value is updated.
-
-### getProperty(key)
-
-Gets given property of the source map.
-
-### removeComments(src)
-
-Returns `src` with all source map comments removed
-
-### removeMapFileComments(src)
-
-Returns `src` with all source map comments pointing to map files removed.
-
-### commentRegex
-
-Provides __a fresh__ RegExp each time it is accessed. Can be used to find source map comments.
-
-Breaks down a source map comment into groups: Groups: 1: media type, 2: MIME type, 3: charset, 4: encoding, 5: data.
-
-### mapFileCommentRegex
-
-Provides __a fresh__ RegExp each time it is accessed. Can be used to find source map comments pointing to map files.
-
-### generateMapFileComment(file, [options])
-
-Returns a comment that links to an external source map via `file`.
-
-By default, the comment is formatted like: `//# sourceMappingURL=...`, which you would normally see in a JS source file.
-
-When `options.multiline == true`, the comment is formatted like: `/*# sourceMappingURL=... */`, which you would find in a CSS source file.
-
-[ci-url]: https://github.com/thlorenz/convert-source-map/actions?query=workflow:ci
-[ci-image]: https://img.shields.io/github/workflow/status/thlorenz/convert-source-map/CI?style=flat-square
+```json
+{
+  "react-refresh/only-export-components": ["error", { "checkJS": true }]
+}
+```
