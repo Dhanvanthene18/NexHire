@@ -1,58 +1,25 @@
 {
-  "name": "deep-is",
-  "version": "0.1.4",
-  "description": "node's assert.deepEqual algorithm except for NaN being equal to NaN",
-  "main": "index.js",
-  "directories": {
-    "lib": ".",
-    "example": "example",
-    "test": "test"
-  },
-  "scripts": {
-    "test": "tape test/*.js"
-  },
-  "devDependencies": {
-    "tape": "~1.0.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "http://github.com/thlorenz/deep-is.git"
+  "name": "eslint-plugin-react-refresh",
+  "description": "Validate that your components can safely be updated with Fast Refresh",
+  "version": "0.5.3",
+  "type": "module",
+  "author": "Arnaud Barré (https://github.com/ArnaudBarre)",
+  "license": "MIT",
+  "repository": "github:ArnaudBarre/eslint-plugin-react-refresh",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
   },
   "keywords": [
-    "equality",
-    "equal",
-    "compare"
+    "eslint",
+    "eslint-plugin",
+    "react",
+    "react-refresh",
+    "fast refresh"
   ],
-  "author": {
-    "name": "Thorsten Lorenz",
-    "email": "thlorenz@gmx.de",
-    "url": "http://thlorenz.com"
-  },
-  "license": "MIT",
-  "testling": {
-    "files": "test/*.js",
-    "browsers": {
-      "ie": [
-        6,
-        7,
-        8,
-        9
-      ],
-      "ff": [
-        3.5,
-        10,
-        15
-      ],
-      "chrome": [
-        10,
-        22
-      ],
-      "safari": [
-        5.1
-      ],
-      "opera": [
-        12
-      ]
-    }
+  "peerDependencies": {
+    "eslint": "^9 || ^10"
   }
 }
