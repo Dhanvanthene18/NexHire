@@ -1,25 +1,25 @@
 {
-  "name": "eslint-plugin-react-refresh",
-  "description": "Validate that your components can safely be updated with Fast Refresh",
-  "version": "0.5.3",
-  "type": "module",
-  "author": "Arnaud Barré (https://github.com/ArnaudBarre)",
-  "license": "MIT",
-  "repository": "github:ArnaudBarre/eslint-plugin-react-refresh",
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "default": "./index.js"
-    }
+  "name": "picocolors",
+  "version": "1.1.1",
+  "main": "./picocolors.js",
+  "types": "./picocolors.d.ts",
+  "browser": {
+    "./picocolors.js": "./picocolors.browser.js"
   },
-  "keywords": [
-    "eslint",
-    "eslint-plugin",
-    "react",
-    "react-refresh",
-    "fast refresh"
+  "sideEffects": false,
+  "description": "The tiniest and the fastest library for terminal output formatting with ANSI colors",
+  "files": [
+    "picocolors.*",
+    "types.d.ts"
   ],
-  "peerDependencies": {
-    "eslint": "^9 || ^10"
-  }
+  "keywords": [
+    "terminal",
+    "colors",
+    "formatting",
+    "cli",
+    "console"
+  ],
+  "author": "Alexey Raspopov",
+  "repository": "alexeyraspopov/picocolors",
+  "license": "ISC"
 }
