@@ -1,222 +1,206 @@
-# eslint-plugin-react-refresh [![npm](https://img.shields.io/npm/v/eslint-plugin-react-refresh)](https://www.npmjs.com/package/eslint-plugin-react-refresh)
+# is-glob [![NPM version](https://img.shields.io/npm/v/is-glob.svg?style=flat)](https://www.npmjs.com/package/is-glob) [![NPM monthly downloads](https://img.shields.io/npm/dm/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![NPM total downloads](https://img.shields.io/npm/dt/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![Build Status](https://img.shields.io/github/workflow/status/micromatch/is-glob/dev)](https://github.com/micromatch/is-glob/actions)
 
-Validate that your components can safely be updated with Fast Refresh.
+> Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience.
 
-## Explainer
+Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
 
-"Fast Refresh", also known as "hot reloading", is a feature in many modern bundlers.
-If you update some React component(s) on disk, then the bundler will know to update only the impacted parts of your page -- without a full page reload.
+## Install
 
-`eslint-plugin-react-refresh` enforces that your components are structured in a way that integrations such as [react-refresh](https://www.npmjs.com/package/react-refresh) expect.
-
-### Limitations
-
-⚠️ To avoid false positives, by default this plugin is only applied on `tsx` & `jsx` files. See [Options](#options) to run on JS files. ⚠️
-
-The plugin relies on naming conventions (i.e. use PascalCase for components, camelCase for util functions). This is why there are some limitations:
-
-- `export *` are not supported and will be reported as an error
-- Anonymous function are not supported (i.e `export default function() {}`)
-- Class components are not supported
-- All-uppercase function export is considered an error when not using direct named export (ex `const CMS = () => <></>; export { CMS }`)
-
-## Installation
+Install with [npm](https://www.npmjs.com/):
 
 ```sh
-npm i -D eslint-plugin-react-refresh
+$ npm install --save is-glob
 ```
+
+You might also be interested in [is-valid-glob](https://github.com/jonschlinkert/is-valid-glob) and [has-glob](https://github.com/jonschlinkert/has-glob).
 
 ## Usage
 
-This plugin provides a single rule, `react-refresh/only-export-components`. There are multiple ways to enable it.
+```js
+var isGlob = require('is-glob');
+```
 
-### Recommended config
+### Default behavior
+
+**True**
+
+Patterns that have glob characters or regex patterns will return `true`:
 
 ```js
-import { defineConfig } from "eslint/config";
-import { reactRefresh } from "eslint-plugin-react-refresh";
-
-export default defineConfig(
-  /* Main config */
-  reactRefresh.configs.recommended(),
-);
+isGlob('!foo.js');
+isGlob('*.js');
+isGlob('**/abc.js');
+isGlob('abc/*.js');
+isGlob('abc/(aaa|bbb).js');
+isGlob('abc/[a-z].js');
+isGlob('abc/{a,b}.js');
+//=> true
 ```
 
-### Vite config
-
-This enables the `allowConstantExport` option which is supported by Vite React plugins.
+Extglobs
 
 ```js
-import { defineConfig } from "eslint/config";
-import { reactRefresh } from "eslint-plugin-react-refresh";
-
-export default defineConfig(
-  /* Main config */
-  reactRefresh.configs.vite(),
-);
+isGlob('abc/@(a).js');
+isGlob('abc/!(a).js');
+isGlob('abc/+(a).js');
+isGlob('abc/*(a).js');
+isGlob('abc/?(a).js');
+//=> true
 ```
 
-### Next config
+**False**
 
-This allows exports like `fetchCache` and `revalidate` which are used in Page or Layout components and don't trigger a full page reload.
+Escaped globs or extglobs return `false`:
 
 ```js
-import { defineConfig } from "eslint/config";
-import { reactRefresh } from "eslint-plugin-react-refresh";
-
-export default defineConfig(
-  /* Main config */
-  reactRefresh.configs.next(),
-);
+isGlob('abc/\\@(a).js');
+isGlob('abc/\\!(a).js');
+isGlob('abc/\\+(a).js');
+isGlob('abc/\\*(a).js');
+isGlob('abc/\\?(a).js');
+isGlob('\\!foo.js');
+isGlob('\\*.js');
+isGlob('\\*\\*/abc.js');
+isGlob('abc/\\*.js');
+isGlob('abc/\\(aaa|bbb).js');
+isGlob('abc/\\[a-z].js');
+isGlob('abc/\\{a,b}.js');
+//=> false
 ```
 
-### Without config
+Patterns that do not have glob patterns return `false`:
 
 ```js
-import { defineConfig } from "eslint/config";
-import { reactRefresh } from "eslint-plugin-react-refresh";
-
-export default defineConfig({
-  // in main config for TSX/JSX source files
-  plugins: {
-    "react-refresh": reactRefresh.plugin,
-  },
-  rules: {
-    "react-refresh/only-export-components": "error",
-  },
-});
+isGlob('abc.js');
+isGlob('abc/def/ghi.js');
+isGlob('foo.js');
+isGlob('abc/@.js');
+isGlob('abc/+.js');
+isGlob('abc/?.js');
+isGlob();
+isGlob(null);
+//=> false
 ```
 
-## Examples
+Arrays are also `false` (If you want to check if an array has a glob pattern, use [has-glob](https://github.com/jonschlinkert/has-glob)):
 
-These examples are from enabling `react-refresh/only-exports-components`.
-
-### Fail
-
-```jsx
-export const foo = () => {};
-export const Bar = () => <></>;
+```js
+isGlob(['**/*.js']);
+isGlob(['foo.js']);
+//=> false
 ```
 
-```jsx
-export default function () {}
-export default compose()(MainComponent)
+### Option strict
+
+When `options.strict === false` the behavior is less strict in determining if a pattern is a glob. Meaning that
+some patterns that would return `false` may return `true`. This is done so that matching libraries like [micromatch](https://github.com/micromatch/micromatch) have a chance at determining if the pattern is a glob or not.
+
+**True**
+
+Patterns that have glob characters or regex patterns will return `true`:
+
+```js
+isGlob('!foo.js', {strict: false});
+isGlob('*.js', {strict: false});
+isGlob('**/abc.js', {strict: false});
+isGlob('abc/*.js', {strict: false});
+isGlob('abc/(aaa|bbb).js', {strict: false});
+isGlob('abc/[a-z].js', {strict: false});
+isGlob('abc/{a,b}.js', {strict: false});
+//=> true
 ```
 
-```jsx
-export * from "./foo";
+Extglobs
+
+```js
+isGlob('abc/@(a).js', {strict: false});
+isGlob('abc/!(a).js', {strict: false});
+isGlob('abc/+(a).js', {strict: false});
+isGlob('abc/*(a).js', {strict: false});
+isGlob('abc/?(a).js', {strict: false});
+//=> true
 ```
 
-```jsx
-const Tab = () => {};
-export const tabs = [<Tab />, <Tab />];
+**False**
+
+Escaped globs or extglobs return `false`:
+
+```js
+isGlob('\\!foo.js', {strict: false});
+isGlob('\\*.js', {strict: false});
+isGlob('\\*\\*/abc.js', {strict: false});
+isGlob('abc/\\*.js', {strict: false});
+isGlob('abc/\\(aaa|bbb).js', {strict: false});
+isGlob('abc/\\[a-z].js', {strict: false});
+isGlob('abc/\\{a,b}.js', {strict: false});
+//=> false
 ```
 
-```jsx
-const App = () => {};
-createRoot(document.getElementById("root")).render(<App />);
+## About
+
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+</details>
+
+<details>
+<summary><strong>Running Tests</strong></summary>
+
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+
+```sh
+$ npm install && npm test
 ```
 
-### Pass
+</details>
 
-```jsx
-export default function Foo() {
-  return <></>;
-}
+<details>
+<summary><strong>Building docs</strong></summary>
+
+_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+
+To generate the readme, run the following command:
+
+```sh
+$ npm install -g verbose/verb#dev verb-generate-readme && verb
 ```
 
-```jsx
-const foo = () => {};
-export const Bar = () => <></>;
-```
+</details>
 
-```jsx
-import { App } from "./App";
-createRoot(document.getElementById("root")).render(<App />);
-```
+### Related projects
 
-## Options
+You might also be interested in these projects:
 
-These options are all present on `react-refresh/only-exports-components`.
+* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
+* [base](https://www.npmjs.com/package/base): Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks | [homepage](https://github.com/node-base/base "Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks")
+* [update](https://www.npmjs.com/package/update): Be scalable! Update is a new, open source developer framework and CLI for automating updates… [more](https://github.com/update/update) | [homepage](https://github.com/update/update "Be scalable! Update is a new, open source developer framework and CLI for automating updates of any kind in code projects.")
+* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
 
-```ts
-interface Options {
-  extraHOCs?: string[];
-  allowExportNames?: string[];
-  allowConstantExport?: boolean;
-  checkJS?: boolean;
-}
+### Contributors
 
-const defaultOptions: Options = {
-  extraHOCs: [],
-  allowExportNames: [],
-  allowConstantExport: false,
-  checkJS: false,
-};
-```
+| **Commits** | **Contributor** |  
+| --- | --- |  
+| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
+| 5  | [doowb](https://github.com/doowb) |  
+| 1  | [phated](https://github.com/phated) |  
+| 1  | [danhper](https://github.com/danhper) |  
+| 1  | [paulmillr](https://github.com/paulmillr) |  
 
-### extraHOCs <small>(v0.5.0)</small>
+### Author
 
-If you're exporting components wrapped in non built-in React HOC (memo, forwardRef, lazy), you can use this option to avoid false positives.
+**Jon Schlinkert**
 
-```json
-{
-  "react-refresh/only-export-components": [
-    "error",
-    { "extraHOCs": ["observer", "withAuth"] }
-  ]
-}
-```
+* [GitHub Profile](https://github.com/jonschlinkert)
+* [Twitter Profile](https://twitter.com/jonschlinkert)
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
 
-### allowExportNames <small>(v0.4.4)</small>
+### License
 
-> Default: `[]`
+Copyright © 2019, [Jon Schlinkert](https://github.com/jonschlinkert).
+Released under the [MIT License](LICENSE).
 
-If you use a framework that handles HMR of some specific exports, you can use this option to avoid warning for them.
+***
 
-Example for [Remix](https://remix.run/docs/en/main/discussion/hot-module-replacement#supported-exports):
-
-```json
-{
-  "react-refresh/only-export-components": [
-    "error",
-    { "allowExportNames": ["meta", "links", "headers", "loader", "action"] }
-  ]
-}
-```
-
-### allowConstantExport <small>(v0.4.0)</small>
-
-> Default: `false` (`true` in `vite` config)
-
-Don't warn when a constant (string, number, boolean, templateLiteral) is exported aside one or more components.
-
-This should be enabled if the fast refresh implementation correctly handles this case (HMR when the constant doesn't change, propagate update to importers when the constant changes.). Vite supports it, PR welcome if you notice other integrations works well.
-
-```json
-{
-  "react-refresh/only-export-components": [
-    "error",
-    { "allowConstantExport": true }
-  ]
-}
-```
-
-Enabling this option allows code such as the following:
-
-```jsx
-export const CONSTANT = 3;
-export const Foo = () => <></>;
-```
-
-### checkJS <small>(v0.3.3)</small>
-
-> Default: `false`
-
-If you're using JSX inside `.js` files (which I don't recommend because it forces you to configure every tool you use to switch the parser), you can still use the plugin by enabling this option. To reduce the number of false positive, only files importing `react` are checked.
-
-```json
-{
-  "react-refresh/only-export-components": ["error", { "checkJS": true }]
-}
-```
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on March 27, 2019._
