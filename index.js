@@ -1,8 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EXPANSION_MAX_LENGTH = exports.EXPANSION_MAX = void 0;
-exports.expand = expand;
-const balanced_match_1 = require("balanced-match");
+import { balanced } from 'balanced-match';
 const escSlash = '\0SLASH' + Math.random() + '\0';
 const escOpen = '\0OPEN' + Math.random() + '\0';
 const escClose = '\0CLOSE' + Math.random() + '\0';
@@ -18,7 +14,7 @@ const openPattern = /\\{/g;
 const closePattern = /\\}/g;
 const commaPattern = /\\,/g;
 const periodPattern = /\\\./g;
-exports.EXPANSION_MAX = 100_000;
+export const EXPANSION_MAX = 100_000;
 // `EXPANSION_MAX` caps the *number* of expansions, but not their length. An
 // input like `'{a,b}'.repeat(1500)` stays under that count - its output is
 // truncated to 100k results - while making every result ~1500 characters
@@ -29,7 +25,7 @@ exports.EXPANSION_MAX = 100_000;
 // matter how many brace groups are chained. The limit sits well above any
 // realistic expansion (100k results hitting `EXPANSION_MAX` measure ~1M
 // characters) so legitimate input is unaffected.
-exports.EXPANSION_MAX_LENGTH = 4_000_000;
+export const EXPANSION_MAX_LENGTH = 4_000_000;
 function numeric(str) {
     return !isNaN(str) ? parseInt(str, 10) : str.charCodeAt(0);
 }
@@ -59,7 +55,7 @@ function parseCommaParts(str) {
         return [''];
     }
     const parts = [];
-    const m = (0, balanced_match_1.balanced)('{', '}', str);
+    const m = balanced('{', '}', str);
     if (!m) {
         return str.split(',');
     }
@@ -75,11 +71,11 @@ function parseCommaParts(str) {
     parts.push.apply(parts, p);
     return parts;
 }
-function expand(str, options = {}) {
+export function expand(str, options = {}) {
     if (!str) {
         return [];
     }
-    const { max = exports.EXPANSION_MAX, maxLength = exports.EXPANSION_MAX_LENGTH } = options;
+    const { max = EXPANSION_MAX, maxLength = EXPANSION_MAX_LENGTH } = options;
     // I don't know why Bash 4.3 does this, but it does.
     // Anything starting with {} will have the first two bytes preserved
     // but *only* at the top level, so {},a}b will not expand to anything,
@@ -195,7 +191,7 @@ function expand_(str, max, maxLength, isTop) {
     let dropEmpties = false;
     let firstGroup = true;
     for (;;) {
-        const m = (0, balanced_match_1.balanced)('{', '}', str);
+        const m = balanced('{', '}', str);
         // No brace set left: the rest of the string is literal.
         if (!m) {
             return combine(acc, str, [''], max, maxLength, dropEmpties);
