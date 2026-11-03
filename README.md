@@ -1,37 +1,106 @@
-# @eslint-community/eslint-utils
+# brace-expansion
 
-[![npm version](https://img.shields.io/npm/v/@eslint-community/eslint-utils.svg)](https://www.npmjs.com/package/@eslint-community/eslint-utils)
-[![Downloads/month](https://img.shields.io/npm/dm/@eslint-community/eslint-utils.svg)](http://www.npmtrends.com/@eslint-community/eslint-utils)
-[![Build Status](https://github.com/eslint-community/eslint-utils/workflows/CI/badge.svg)](https://github.com/eslint-community/eslint-utils/actions)
-[![Coverage Status](https://codecov.io/gh/eslint-community/eslint-utils/branch/main/graph/badge.svg)](https://codecov.io/gh/eslint-community/eslint-utils)
+[Brace expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
+as known from sh/bash, in JavaScript.
 
-## 🏁 Goal
+[![CI](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml)
+[![downloads](https://img.shields.io/npm/dm/brace-expansion.svg)](https://www.npmjs.org/package/brace-expansion)
 
-This package provides utility functions and classes for make ESLint custom rules.
+## Example
 
-For examples:
+```js
+import { expand } from 'brace-expansion'
 
--   [`getStaticValue`](https://eslint-community.github.io/eslint-utils/api/ast-utils.html#getstaticvalue) evaluates static value on AST.
--   [`ReferenceTracker`](https://eslint-community.github.io/eslint-utils/api/scope-utils.html#referencetracker-class) checks the members of modules/globals as handling assignments and destructuring.
+expand('file-{a,b,c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-## 📖 Usage
+expand('-v{,,}')
+// => ['-v', '-v', '-v']
 
-See [documentation](https://eslint-community.github.io/eslint-utils).
+expand('file{0..2}.jpg')
+// => ['file0.jpg', 'file1.jpg', 'file2.jpg']
 
-## 📰 Changelog
+expand('file-{a..c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-See [releases](https://github.com/eslint-community/eslint-utils/releases).
+expand('file{2..0}.jpg')
+// => ['file2.jpg', 'file1.jpg', 'file0.jpg']
 
-## ❤️ Contributing
+expand('file{0..4..2}.jpg')
+// => ['file0.jpg', 'file2.jpg', 'file4.jpg']
 
-Welcome contributing!
+expand('file-{a..e..2}.jpg')
+// => ['file-a.jpg', 'file-c.jpg', 'file-e.jpg']
 
-Please use GitHub's Issues/PRs.
+expand('file{00..10..5}.jpg')
+// => ['file00.jpg', 'file05.jpg', 'file10.jpg']
 
-### Development Tools
+expand('{{A..C},{a..c}}')
+// => ['A', 'B', 'C', 'a', 'b', 'c']
 
--   `npm run test-coverage` runs tests and measures coverage.
--   `npm run clean` removes the coverage result of `npm run test-coverage` command.
--   `npm run coverage` shows the coverage result of the last `npm run test-coverage` command.
--   `npm run lint` runs ESLint.
--   `npm run watch` runs tests on each file change.
+expand('ppp{,config,oe{,conf}}')
+// => ['ppp', 'pppconfig', 'pppoe', 'pppoeconf']
+```
+
+## API
+
+```js
+import { expand } from 'brace-expansion'
+```
+
+### const expanded = expand(str, [options])
+
+Return an array of all possible and valid expansions of `str`. If
+none are found, `[str]` is returned.
+
+The `options` object can provide a `max` value to cap the number
+of expansions allowed. This is limited to `100_000` by default,
+to prevent DoS attacks.
+
+```js
+const expansions = expand('{1..100}'.repeat(5), {
+  max: 100,
+})
+// expansions.length will be 100, not 100^5
+```
+
+The `options` object can also provide a `maxLength` value to cap the
+total number of characters across all expansions. This is limited to
+`4_000_000` by default, to prevent memory exhaustion from inputs whose
+result count stays under `max` while each result grows very long.
+
+```js
+const expansions = expand('{a,b}'.repeat(1500), {
+  maxLength: 100,
+})
+// the combined length of expansions will not exceed 100 characters
+```
+
+Valid expansions are:
+
+```js
+;/^(.*,)+(.+)?$/
+// {a,b,...}
+```
+
+A comma separated list of options, like `{a,b}` or `{a,{b,c}}` or `{,a,}`.
+
+```js
+;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
+```
+
+A numeric sequence from `x` to `y` inclusive, with optional increment.
+If `x` or `y` start with a leading `0`, all the numbers will be padded
+to have equal length. Negative numbers and backwards iteration work too.
+
+```js
+;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
+```
+
+An alphabetic sequence from `x` to `y` inclusive, with optional increment.
+`x` and `y` must be exactly one character, and if given, `incr` must be a
+number.
+
+For compatibility reasons, the string `${` is not eligible for brace expansion.
