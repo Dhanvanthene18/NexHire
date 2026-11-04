@@ -1,106 +1,89 @@
-# brace-expansion
+# cross-spawn
 
-[Brace expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
-as known from sh/bash, in JavaScript.
+[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][ci-image]][ci-url] [![Build status][appveyor-image]][appveyor-url]
 
-[![CI](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml/badge.svg)](https://github.com/juliangruber/brace-expansion/actions/workflows/ci.yml)
-[![downloads](https://img.shields.io/npm/dm/brace-expansion.svg)](https://www.npmjs.org/package/brace-expansion)
+[npm-url]:https://npmjs.org/package/cross-spawn
+[downloads-image]:https://img.shields.io/npm/dm/cross-spawn.svg
+[npm-image]:https://img.shields.io/npm/v/cross-spawn.svg
+[ci-url]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml
+[ci-image]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml/badge.svg
+[appveyor-url]:https://ci.appveyor.com/project/satazor/node-cross-spawn
+[appveyor-image]:https://img.shields.io/appveyor/ci/satazor/node-cross-spawn/master.svg
 
-## Example
+A cross platform solution to node's spawn and spawnSync.
 
-```js
-import { expand } from 'brace-expansion'
+## Installation
 
-expand('file-{a,b,c}.jpg')
-// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
+Node.js version 8 and up:
+`$ npm install cross-spawn`
 
-expand('-v{,,}')
-// => ['-v', '-v', '-v']
+Node.js version 7 and under:
+`$ npm install cross-spawn@6`
 
-expand('file{0..2}.jpg')
-// => ['file0.jpg', 'file1.jpg', 'file2.jpg']
+## Why
 
-expand('file-{a..c}.jpg')
-// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
+Node has issues when using spawn on Windows:
 
-expand('file{2..0}.jpg')
-// => ['file2.jpg', 'file1.jpg', 'file0.jpg']
+- It ignores [PATHEXT](https://github.com/joyent/node/issues/2318)
+- It does not support [shebangs](https://en.wikipedia.org/wiki/Shebang_(Unix))
+- Has problems running commands with [spaces](https://github.com/nodejs/node/issues/7367)
+- Has problems running commands with posix relative paths (e.g.: `./my-folder/my-executable`)
+- Has an [issue](https://github.com/moxystudio/node-cross-spawn/issues/82) with command shims (files in `node_modules/.bin/`), where arguments with quotes and parenthesis would result in [invalid syntax error](https://github.com/moxystudio/node-cross-spawn/blob/e77b8f22a416db46b6196767bcd35601d7e11d54/test/index.test.js#L149)
+- No `options.shell` support on node `<v4.8`
 
-expand('file{0..4..2}.jpg')
-// => ['file0.jpg', 'file2.jpg', 'file4.jpg']
+All these issues are handled correctly by `cross-spawn`.
+There are some known modules, such as [win-spawn](https://github.com/ForbesLindesay/win-spawn), that try to solve this but they are either broken or provide faulty escaping of shell arguments.
 
-expand('file-{a..e..2}.jpg')
-// => ['file-a.jpg', 'file-c.jpg', 'file-e.jpg']
 
-expand('file{00..10..5}.jpg')
-// => ['file00.jpg', 'file05.jpg', 'file10.jpg']
+## Usage
 
-expand('{{A..C},{a..c}}')
-// => ['A', 'B', 'C', 'a', 'b', 'c']
+Exactly the same way as node's [`spawn`](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) or [`spawnSync`](https://nodejs.org/api/child_process.html#child_process_child_process_spawnsync_command_args_options), so it's a drop in replacement.
 
-expand('ppp{,config,oe{,conf}}')
-// => ['ppp', 'pppconfig', 'pppoe', 'pppoeconf']
-```
-
-## API
 
 ```js
-import { expand } from 'brace-expansion'
+const spawn = require('cross-spawn');
+
+// Spawn NPM asynchronously
+const child = spawn('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
+
+// Spawn NPM synchronously
+const result = spawn.sync('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
 ```
 
-### const expanded = expand(str, [options])
 
-Return an array of all possible and valid expansions of `str`. If
-none are found, `[str]` is returned.
+## Caveats
 
-The `options` object can provide a `max` value to cap the number
-of expansions allowed. This is limited to `100_000` by default,
-to prevent DoS attacks.
+### Using `options.shell` as an alternative to `cross-spawn`
 
-```js
-const expansions = expand('{1..100}'.repeat(5), {
-  max: 100,
-})
-// expansions.length will be 100, not 100^5
-```
+Starting from node `v4.8`, `spawn` has a `shell` option that allows you run commands from within a shell. This new option solves
+the [PATHEXT](https://github.com/joyent/node/issues/2318) issue but:
 
-The `options` object can also provide a `maxLength` value to cap the
-total number of characters across all expansions. This is limited to
-`4_000_000` by default, to prevent memory exhaustion from inputs whose
-result count stays under `max` while each result grows very long.
+- It's not supported in node `<v4.8`
+- You must manually escape the command and arguments which is very error prone, specially when passing user input
+- There are a lot of other unresolved issues from the [Why](#why) section that you must take into account
 
-```js
-const expansions = expand('{a,b}'.repeat(1500), {
-  maxLength: 100,
-})
-// the combined length of expansions will not exceed 100 characters
-```
+If you are using the `shell` option to spawn a command in a cross platform way, consider using `cross-spawn` instead. You have been warned.
 
-Valid expansions are:
+### `options.shell` support
 
-```js
-;/^(.*,)+(.+)?$/
-// {a,b,...}
-```
+While `cross-spawn` adds support for `options.shell` in node `<v4.8`, all of its enhancements are disabled.
 
-A comma separated list of options, like `{a,b}` or `{a,{b,c}}` or `{,a,}`.
+This mimics the Node.js behavior. More specifically, the command and its arguments will not be automatically escaped nor shebang support will be offered. This is by design because if you are using `options.shell` you are probably targeting a specific platform anyway and you don't want things to get into your way.
 
-```js
-;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
-// {x..y[..incr]}
-```
+### Shebangs support
 
-A numeric sequence from `x` to `y` inclusive, with optional increment.
-If `x` or `y` start with a leading `0`, all the numbers will be padded
-to have equal length. Negative numbers and backwards iteration work too.
+While `cross-spawn` handles shebangs on Windows, its support is limited. More specifically, it just supports `#!/usr/bin/env <program>` where `<program>` must not contain any arguments.   
+If you would like to have the shebang support improved, feel free to contribute via a pull-request.
 
-```js
-;/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
-// {x..y[..incr]}
-```
+Remember to always test your code on Windows!
 
-An alphabetic sequence from `x` to `y` inclusive, with optional increment.
-`x` and `y` must be exactly one character, and if given, `incr` must be a
-number.
 
-For compatibility reasons, the string `${` is not eligible for brace expansion.
+## Tests
+
+`$ npm test`   
+`$ npm test -- --watch` during development
+
+
+## License
+
+Released under the [MIT License](https://www.opensource.org/licenses/mit-license.php).
