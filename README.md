@@ -1,89 +1,206 @@
-# cross-spawn
+# is-glob [![NPM version](https://img.shields.io/npm/v/is-glob.svg?style=flat)](https://www.npmjs.com/package/is-glob) [![NPM monthly downloads](https://img.shields.io/npm/dm/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![NPM total downloads](https://img.shields.io/npm/dt/is-glob.svg?style=flat)](https://npmjs.org/package/is-glob) [![Build Status](https://img.shields.io/github/workflow/status/micromatch/is-glob/dev)](https://github.com/micromatch/is-glob/actions)
 
-[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][ci-image]][ci-url] [![Build status][appveyor-image]][appveyor-url]
+> Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience.
 
-[npm-url]:https://npmjs.org/package/cross-spawn
-[downloads-image]:https://img.shields.io/npm/dm/cross-spawn.svg
-[npm-image]:https://img.shields.io/npm/v/cross-spawn.svg
-[ci-url]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml
-[ci-image]:https://github.com/moxystudio/node-cross-spawn/actions/workflows/ci.yaml/badge.svg
-[appveyor-url]:https://ci.appveyor.com/project/satazor/node-cross-spawn
-[appveyor-image]:https://img.shields.io/appveyor/ci/satazor/node-cross-spawn/master.svg
+Please consider following this project's author, [Jon Schlinkert](https://github.com/jonschlinkert), and consider starring the project to show your :heart: and support.
 
-A cross platform solution to node's spawn and spawnSync.
+## Install
 
-## Installation
+Install with [npm](https://www.npmjs.com/):
 
-Node.js version 8 and up:
-`$ npm install cross-spawn`
+```sh
+$ npm install --save is-glob
+```
 
-Node.js version 7 and under:
-`$ npm install cross-spawn@6`
-
-## Why
-
-Node has issues when using spawn on Windows:
-
-- It ignores [PATHEXT](https://github.com/joyent/node/issues/2318)
-- It does not support [shebangs](https://en.wikipedia.org/wiki/Shebang_(Unix))
-- Has problems running commands with [spaces](https://github.com/nodejs/node/issues/7367)
-- Has problems running commands with posix relative paths (e.g.: `./my-folder/my-executable`)
-- Has an [issue](https://github.com/moxystudio/node-cross-spawn/issues/82) with command shims (files in `node_modules/.bin/`), where arguments with quotes and parenthesis would result in [invalid syntax error](https://github.com/moxystudio/node-cross-spawn/blob/e77b8f22a416db46b6196767bcd35601d7e11d54/test/index.test.js#L149)
-- No `options.shell` support on node `<v4.8`
-
-All these issues are handled correctly by `cross-spawn`.
-There are some known modules, such as [win-spawn](https://github.com/ForbesLindesay/win-spawn), that try to solve this but they are either broken or provide faulty escaping of shell arguments.
-
+You might also be interested in [is-valid-glob](https://github.com/jonschlinkert/is-valid-glob) and [has-glob](https://github.com/jonschlinkert/has-glob).
 
 ## Usage
 
-Exactly the same way as node's [`spawn`](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options) or [`spawnSync`](https://nodejs.org/api/child_process.html#child_process_child_process_spawnsync_command_args_options), so it's a drop in replacement.
-
-
 ```js
-const spawn = require('cross-spawn');
-
-// Spawn NPM asynchronously
-const child = spawn('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
-
-// Spawn NPM synchronously
-const result = spawn.sync('npm', ['list', '-g', '-depth', '0'], { stdio: 'inherit' });
+var isGlob = require('is-glob');
 ```
 
+### Default behavior
 
-## Caveats
+**True**
 
-### Using `options.shell` as an alternative to `cross-spawn`
+Patterns that have glob characters or regex patterns will return `true`:
 
-Starting from node `v4.8`, `spawn` has a `shell` option that allows you run commands from within a shell. This new option solves
-the [PATHEXT](https://github.com/joyent/node/issues/2318) issue but:
+```js
+isGlob('!foo.js');
+isGlob('*.js');
+isGlob('**/abc.js');
+isGlob('abc/*.js');
+isGlob('abc/(aaa|bbb).js');
+isGlob('abc/[a-z].js');
+isGlob('abc/{a,b}.js');
+//=> true
+```
 
-- It's not supported in node `<v4.8`
-- You must manually escape the command and arguments which is very error prone, specially when passing user input
-- There are a lot of other unresolved issues from the [Why](#why) section that you must take into account
+Extglobs
 
-If you are using the `shell` option to spawn a command in a cross platform way, consider using `cross-spawn` instead. You have been warned.
+```js
+isGlob('abc/@(a).js');
+isGlob('abc/!(a).js');
+isGlob('abc/+(a).js');
+isGlob('abc/*(a).js');
+isGlob('abc/?(a).js');
+//=> true
+```
 
-### `options.shell` support
+**False**
 
-While `cross-spawn` adds support for `options.shell` in node `<v4.8`, all of its enhancements are disabled.
+Escaped globs or extglobs return `false`:
 
-This mimics the Node.js behavior. More specifically, the command and its arguments will not be automatically escaped nor shebang support will be offered. This is by design because if you are using `options.shell` you are probably targeting a specific platform anyway and you don't want things to get into your way.
+```js
+isGlob('abc/\\@(a).js');
+isGlob('abc/\\!(a).js');
+isGlob('abc/\\+(a).js');
+isGlob('abc/\\*(a).js');
+isGlob('abc/\\?(a).js');
+isGlob('\\!foo.js');
+isGlob('\\*.js');
+isGlob('\\*\\*/abc.js');
+isGlob('abc/\\*.js');
+isGlob('abc/\\(aaa|bbb).js');
+isGlob('abc/\\[a-z].js');
+isGlob('abc/\\{a,b}.js');
+//=> false
+```
 
-### Shebangs support
+Patterns that do not have glob patterns return `false`:
 
-While `cross-spawn` handles shebangs on Windows, its support is limited. More specifically, it just supports `#!/usr/bin/env <program>` where `<program>` must not contain any arguments.   
-If you would like to have the shebang support improved, feel free to contribute via a pull-request.
+```js
+isGlob('abc.js');
+isGlob('abc/def/ghi.js');
+isGlob('foo.js');
+isGlob('abc/@.js');
+isGlob('abc/+.js');
+isGlob('abc/?.js');
+isGlob();
+isGlob(null);
+//=> false
+```
 
-Remember to always test your code on Windows!
+Arrays are also `false` (If you want to check if an array has a glob pattern, use [has-glob](https://github.com/jonschlinkert/has-glob)):
 
+```js
+isGlob(['**/*.js']);
+isGlob(['foo.js']);
+//=> false
+```
 
-## Tests
+### Option strict
 
-`$ npm test`   
-`$ npm test -- --watch` during development
+When `options.strict === false` the behavior is less strict in determining if a pattern is a glob. Meaning that
+some patterns that would return `false` may return `true`. This is done so that matching libraries like [micromatch](https://github.com/micromatch/micromatch) have a chance at determining if the pattern is a glob or not.
 
+**True**
 
-## License
+Patterns that have glob characters or regex patterns will return `true`:
 
-Released under the [MIT License](https://www.opensource.org/licenses/mit-license.php).
+```js
+isGlob('!foo.js', {strict: false});
+isGlob('*.js', {strict: false});
+isGlob('**/abc.js', {strict: false});
+isGlob('abc/*.js', {strict: false});
+isGlob('abc/(aaa|bbb).js', {strict: false});
+isGlob('abc/[a-z].js', {strict: false});
+isGlob('abc/{a,b}.js', {strict: false});
+//=> true
+```
+
+Extglobs
+
+```js
+isGlob('abc/@(a).js', {strict: false});
+isGlob('abc/!(a).js', {strict: false});
+isGlob('abc/+(a).js', {strict: false});
+isGlob('abc/*(a).js', {strict: false});
+isGlob('abc/?(a).js', {strict: false});
+//=> true
+```
+
+**False**
+
+Escaped globs or extglobs return `false`:
+
+```js
+isGlob('\\!foo.js', {strict: false});
+isGlob('\\*.js', {strict: false});
+isGlob('\\*\\*/abc.js', {strict: false});
+isGlob('abc/\\*.js', {strict: false});
+isGlob('abc/\\(aaa|bbb).js', {strict: false});
+isGlob('abc/\\[a-z].js', {strict: false});
+isGlob('abc/\\{a,b}.js', {strict: false});
+//=> false
+```
+
+## About
+
+<details>
+<summary><strong>Contributing</strong></summary>
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](../../issues/new).
+
+</details>
+
+<details>
+<summary><strong>Running Tests</strong></summary>
+
+Running and reviewing unit tests is a great way to get familiarized with a library and its API. You can install dependencies and run tests with the following command:
+
+```sh
+$ npm install && npm test
+```
+
+</details>
+
+<details>
+<summary><strong>Building docs</strong></summary>
+
+_(This project's readme.md is generated by [verb](https://github.com/verbose/verb-generate-readme), please don't edit the readme directly. Any changes to the readme must be made in the [.verb.md](.verb.md) readme template.)_
+
+To generate the readme, run the following command:
+
+```sh
+$ npm install -g verbose/verb#dev verb-generate-readme && verb
+```
+
+</details>
+
+### Related projects
+
+You might also be interested in these projects:
+
+* [assemble](https://www.npmjs.com/package/assemble): Get the rocks out of your socks! Assemble makes you fast at creating web projects… [more](https://github.com/assemble/assemble) | [homepage](https://github.com/assemble/assemble "Get the rocks out of your socks! Assemble makes you fast at creating web projects. Assemble is used by thousands of projects for rapid prototyping, creating themes, scaffolds, boilerplates, e-books, UI components, API documentation, blogs, building websit")
+* [base](https://www.npmjs.com/package/base): Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks | [homepage](https://github.com/node-base/base "Framework for rapidly creating high quality, server-side node.js applications, using plugins like building blocks")
+* [update](https://www.npmjs.com/package/update): Be scalable! Update is a new, open source developer framework and CLI for automating updates… [more](https://github.com/update/update) | [homepage](https://github.com/update/update "Be scalable! Update is a new, open source developer framework and CLI for automating updates of any kind in code projects.")
+* [verb](https://www.npmjs.com/package/verb): Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used… [more](https://github.com/verbose/verb) | [homepage](https://github.com/verbose/verb "Documentation generator for GitHub projects. Verb is extremely powerful, easy to use, and is used on hundreds of projects of all sizes to generate everything from API docs to readmes.")
+
+### Contributors
+
+| **Commits** | **Contributor** |  
+| --- | --- |  
+| 47 | [jonschlinkert](https://github.com/jonschlinkert) |  
+| 5  | [doowb](https://github.com/doowb) |  
+| 1  | [phated](https://github.com/phated) |  
+| 1  | [danhper](https://github.com/danhper) |  
+| 1  | [paulmillr](https://github.com/paulmillr) |  
+
+### Author
+
+**Jon Schlinkert**
+
+* [GitHub Profile](https://github.com/jonschlinkert)
+* [Twitter Profile](https://twitter.com/jonschlinkert)
+* [LinkedIn Profile](https://linkedin.com/in/jonschlinkert)
+
+### License
+
+Copyright © 2019, [Jon Schlinkert](https://github.com/jonschlinkert).
+Released under the [MIT License](LICENSE).
+
+***
+
+_This file was generated by [verb-generate-readme](https://github.com/verbose/verb-generate-readme), v0.8.0, on March 27, 2019._
