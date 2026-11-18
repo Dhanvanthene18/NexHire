@@ -1,77 +1,134 @@
-# flat-cache
+<p align="center">
+  <a href="https://gulpjs.com">
+    <img height="257" width="114" src="https://raw.githubusercontent.com/gulpjs/artwork/master/gulp-2x.png">
+  </a>
+</p>
 
-> A stupidly simple key/value storage using files to persist the data
+# glob-parent
 
-[![NPM Version](https://img.shields.io/npm/v/flat-cache.svg?style=flat)](https://npmjs.org/package/flat-cache)
-[![tests](https://github.com/jaredwray/flat-cache/actions/workflows/tests.yaml/badge.svg?branch=master)](https://github.com/jaredwray/flat-cache/actions/workflows/tests.yaml)
-[![codecov](https://codecov.io/github/jaredwray/flat-cache/branch/master/graph/badge.svg?token=KxR95XT3NF)](https://codecov.io/github/jaredwray/flat-cache)
-[![npm](https://img.shields.io/npm/dm/flat-cache)](https://npmjs.com/package/flat-cache)
+[![NPM version][npm-image]][npm-url] [![Downloads][downloads-image]][npm-url] [![Build Status][ci-image]][ci-url] [![Coveralls Status][coveralls-image]][coveralls-url]
 
-## install
-
-```bash
-npm i --save flat-cache
-```
+Extract the non-magic parent path from a glob string.
 
 ## Usage
 
 ```js
-const flatCache = require('flat-cache');
-// loads the cache, if one does not exists for the given
-// Id a new one will be prepared to be created
-const cache = flatCache.load('cacheId');
+var globParent = require('glob-parent');
 
-// sets a key on the cache
-cache.setKey('key', { foo: 'var' });
+globParent('path/to/*.js'); // 'path/to'
+globParent('/root/path/to/*.js'); // '/root/path/to'
+globParent('/*.js'); // '/'
+globParent('*.js'); // '.'
+globParent('**/*.js'); // '.'
+globParent('path/{to,from}'); // 'path'
+globParent('path/!(to|from)'); // 'path'
+globParent('path/?(to|from)'); // 'path'
+globParent('path/+(to|from)'); // 'path'
+globParent('path/*(to|from)'); // 'path'
+globParent('path/@(to|from)'); // 'path'
+globParent('path/**/*'); // 'path'
 
-// get a key from the cache
-cache.getKey('key'); // { foo: 'var' }
-
-// fetch the entire persisted object
-cache.all(); // { 'key': { foo: 'var' } }
-
-// remove a key
-cache.removeKey('key'); // removes a key from the cache
-
-// save it to disk
-cache.save(); // very important, if you don't save no changes will be persisted.
-// cache.save( true /* noPrune */) // can be used to prevent the removal of non visited keys
-
-// loads the cache from a given directory, if one does
-// not exists for the given Id a new one will be prepared to be created
-const cache = flatCache.load('cacheId', path.resolve('./path/to/folder'));
-
-// The following methods are useful to clear the cache
-// delete a given cache
-flatCache.clearCacheById('cacheId'); // removes the cacheId document if one exists.
-
-// delete all cache
-flatCache.clearAll(); // remove the cache directory
+// if provided a non-glob path, returns the nearest dir
+globParent('path/foo/bar.js'); // 'path/foo'
+globParent('path/foo/'); // 'path/foo'
+globParent('path/foo'); // 'path' (see issue #3 for details)
 ```
 
-## Motivation for this module
+## API
 
-I needed a super simple and dumb **in-memory cache** with optional disk persistance in order to make
-a script that will beutify files with `esformatter` only execute on the files that were changed since the last run.
-To make that possible we need to store the `fileSize` and `modificationTime` of the files. So a simple `key/value`
-storage was needed and Bam! this module was born.
+### `globParent(maybeGlobString, [options])`
 
-## Important notes
+Takes a string and returns the part of the path before the glob begins. Be aware of Escaping rules and Limitations below.
 
-- If no directory is especified when the `load` method is called, a folder named `.cache` will be created
-  inside the module directory when `cache.save` is called. If you're committing your `node_modules` to any vcs, you
-  might want to ignore the default `.cache` folder, or specify a custom directory.
-- The values set on the keys of the cache should be `stringify-able` ones, meaning no circular references
-- All the changes to the cache state are done to memory
-- I could have used a timer or `Object.observe` to deliver the changes to disk, but I wanted to keep this module
-  intentionally dumb and simple
-- Non visited keys are removed when `cache.save()` is called. If this is not desired, you can pass `true` to the save call
-  like: `cache.save( true /* noPrune */ )`.
+#### options
+
+```js
+{
+  // Disables the automatic conversion of slashes for Windows
+  flipBackslashes: true;
+}
+```
+
+## Escaping
+
+The following characters have special significance in glob patterns and must be escaped if you want them to be treated as regular path characters:
+
+- `?` (question mark) unless used as a path segment alone
+- `*` (asterisk)
+- `|` (pipe)
+- `(` (opening parenthesis)
+- `)` (closing parenthesis)
+- `{` (opening curly brace)
+- `}` (closing curly brace)
+- `[` (opening bracket)
+- `]` (closing bracket)
+
+**Example**
+
+```js
+globParent('foo/[bar]/'); // 'foo'
+globParent('foo/\\[bar]/'); // 'foo/[bar]'
+```
+
+## Limitations
+
+### Braces & Brackets
+
+This library attempts a quick and imperfect method of determining which path
+parts have glob magic without fully parsing/lexing the pattern. There are some
+advanced use cases that can trip it up, such as nested braces where the outer
+pair is escaped and the inner one contains a path separator. If you find
+yourself in the unlikely circumstance of being affected by this or need to
+ensure higher-fidelity glob handling in your library, it is recommended that you
+pre-process your input with [expand-braces] and/or [expand-brackets].
+
+### Windows
+
+Backslashes are not valid path separators for globs. If a path with backslashes
+is provided anyway, for simple cases, glob-parent will replace the path
+separator for you and return the non-glob parent path (now with
+forward-slashes, which are still valid as Windows path separators).
+
+This cannot be used in conjunction with escape characters.
+
+```js
+// BAD
+globParent('C:\\Program Files \\(x86\\)\\*.ext'); // 'C:/Program Files /(x86/)'
+
+// GOOD
+globParent('C:/Program Files\\(x86\\)/*.ext'); // 'C:/Program Files (x86)'
+```
+
+If you are using escape characters for a pattern without path parts (i.e.
+relative to `cwd`), prefix with `./` to avoid confusing glob-parent.
+
+```js
+// BAD
+globParent('foo \\[bar]'); // 'foo '
+globParent('foo \\[bar]*'); // 'foo '
+
+// GOOD
+globParent('./foo \\[bar]'); // 'foo [bar]'
+globParent('./foo \\[bar]*'); // '.'
+```
 
 ## License
 
-MIT
+ISC
 
-## Changelog
+<!-- prettier-ignore-start -->
+[downloads-image]: https://img.shields.io/npm/dm/glob-parent.svg?style=flat-square
+[npm-url]: https://www.npmjs.com/package/glob-parent
+[npm-image]: https://img.shields.io/npm/v/glob-parent.svg?style=flat-square
 
-[changelog](./changelog.md)
+[ci-url]: https://github.com/gulpjs/glob-parent/actions?query=workflow:dev
+[ci-image]: https://img.shields.io/github/workflow/status/gulpjs/glob-parent/dev?style=flat-square
+
+[coveralls-url]: https://coveralls.io/r/gulpjs/glob-parent
+[coveralls-image]: https://img.shields.io/coveralls/gulpjs/glob-parent/master.svg?style=flat-square
+<!-- prettier-ignore-end -->
+
+<!-- prettier-ignore-start -->
+[expand-braces]: https://github.com/jonschlinkert/expand-braces
+[expand-brackets]: https://github.com/jonschlinkert/expand-brackets
+<!-- prettier-ignore-end -->
