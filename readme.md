@@ -1,33 +1,34 @@
-# shebang-regex [![Build Status](https://travis-ci.org/sindresorhus/shebang-regex.svg?branch=master)](https://travis-ci.org/sindresorhus/shebang-regex)
+# shebang-command [![Build Status](https://travis-ci.org/kevva/shebang-command.svg?branch=master)](https://travis-ci.org/kevva/shebang-command)
 
-> Regular expression for matching a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) line
+> Get the command from a shebang
 
 
 ## Install
 
 ```
-$ npm install shebang-regex
+$ npm install shebang-command
 ```
 
 
 ## Usage
 
 ```js
-const shebangRegex = require('shebang-regex');
+const shebangCommand = require('shebang-command');
 
-const string = '#!/usr/bin/env node\nconsole.log("unicorns");';
+shebangCommand('#!/usr/bin/env node');
+//=> 'node'
 
-shebangRegex.test(string);
-//=> true
-
-shebangRegex.exec(string)[0];
-//=> '#!/usr/bin/env node'
-
-shebangRegex.exec(string)[1];
-//=> '/usr/bin/env node'
+shebangCommand('#!/bin/bash');
+//=> 'bash'
 ```
 
 
-## License
+## API
 
-MIT © [Sindre Sorhus](https://sindresorhus.com)
+### shebangCommand(string)
+
+#### string
+
+Type: `string`
+
+String containing a shebang.
