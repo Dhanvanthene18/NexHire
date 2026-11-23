@@ -1,8 +1,22 @@
-export declare const EXPANSION_MAX = 100000;
-export declare const EXPANSION_MAX_LENGTH = 4000000;
-export type BraceExpansionOptions = {
-    max?: number;
-    maxLength?: number;
-};
-export declare function expand(str: string, options?: BraceExpansionOptions): string[];
-//# sourceMappingURL=index.d.ts.map
+/**
+Regular expression for matching a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) line.
+
+@example
+```
+import shebangRegex = require('shebang-regex');
+
+const string = '#!/usr/bin/env node\nconsole.log("unicorns");';
+
+shebangRegex.test(string);
+//=> true
+
+shebangRegex.exec(string)[0];
+//=> '#!/usr/bin/env node'
+
+shebangRegex.exec(string)[1];
+//=> '/usr/bin/env node'
+```
+*/
+declare const shebangRegex: RegExp;
+
+export = shebangRegex;
